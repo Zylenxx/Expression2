@@ -6,6 +6,8 @@
 This is a Concept for voxel-based Particle Creation.
 You are allowed to suggest features or contribute to 
 code to make this a highly modular chipset.
+!! This will be impossible to run when the player
+or server has "particleCore" installed as an addon.
 /////////////////////////////////////////////////]#
 
 #[ ///////////////////////////////    SETTINGS   ////////////////////////////////
