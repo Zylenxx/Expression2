@@ -8,6 +8,7 @@ if (first()||duped()){
     rangerPersist(1)
     rangerFilter(owner())
 }
+# oh btw this wont work if the server has plycore set to client only
 interval(100)
 if (changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(9)=="_unfreeze"){
 hideChat(1) Target =owner():lastSaid():sub(11)   
