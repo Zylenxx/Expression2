@@ -1,6 +1,11 @@
 @name EGP Hud 3d Map
 @inputs EGPv3:wirelink
 @persist Me:entity Pos:vector2 Offset:vector2
+
+# This file will add an 3d Hud to your screen with the use of an EGPv3 Hud.
+# Dots will represent the players and their weaponcolor.
+# The height difference will be displayed as an offset and a line connecting your local ground to said dots.
+
 if (first()){
     entity():createWire(entity():isWeldedTo(),"EGPv3","wirelink")
     EGPv3:egpClear()
