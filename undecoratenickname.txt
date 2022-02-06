@@ -3,10 +3,17 @@ function string entity:undecorateNick(){
 UN = This:toString():explode("[")
 return UN[3,string]:replace("]","")
 }
+
+# this is for servers that use decorated naming.
+# you may use this as an #include.
+
+#[
+
+Example usage.
 if (changed(owner():lastSaidWhen())&&owner():lastSaid():left(27)=="_expression2.undecorateNick"){
     concmd("say "+findPlayerByName(owner():lastSaid():sub(29):replace("(",""):replace(")","")):undecorateNick())
 }
 
-#[
+the code below is pseudocode. this may be adjusted with the lua variant soon.
 function entity:undecorateNick() do local UN = {ply:ToString():Explode("[")} return UN[3]:Replace("]","") end
 ]#
