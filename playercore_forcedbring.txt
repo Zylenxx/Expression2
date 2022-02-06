@@ -1,0 +1,15 @@
+@name forced bring command [THIS NEEDS TO BE PATCHED]
+@model models/maxofs2d/hover_rings.mdl
+@outputs 
+@persist 
+if (first()||duped()){
+    setName("Searah's DevTools: unrestricted Bring [Patched]")
+    rangerPersist(1)
+    rangerFilter(owner())
+}
+interval(100)
+if (changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(7)=="_freeze"){
+    THERE = owner():pos()+vec(0,0,100)
+  BringTarget = owner():lastSaid():sub(9)   
+    findPlayerByName(BringTarget):plyFreeze(1)
+}

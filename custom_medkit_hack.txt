@@ -1,0 +1,13 @@
+@name TAKE MY DAMN MEDKIT FFS
+# your mom
+findByClass("medkit_thrown")
+owner():plySetHealth(100)
+interval(40)
+foreach(P,Ply:entity=players()){
+    foreach(M,Med:entity=findToArray()){
+        Med:setMass(50000)
+        if (Ply:pos():distance(Med:pos())<400&&Ply:health()<100){
+        Med:propSetVelocityInstant(vec(10000,0,0):rotate(heading(Med:pos(),ang(180,-180,0),Ply:shootPos())))   
+    }
+}
+}

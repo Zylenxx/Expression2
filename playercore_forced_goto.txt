@@ -1,0 +1,15 @@
+@name forced goto command [Exclusive]
+@model models/maxofs2d/hover_rings.mdl
+runOnChat(1)
+interval(40)
+if (first()){
+    setName("Searah's Dev Tools: unrestricted Goto")
+}
+if (changed(owner():lastSaid())&&owner():lastSaid():left(5)=="_goto"){
+    owner():plySetPos(findPlayerByName(owner():lastSaid():sub(7)):pos()+vec(50,50,0):rotate(findPlayerByName(owner():lastSaid():sub(7)):eyeAngles()*ang(0,1,0)))
+    hideChat(1)
+    concmd("saysound beep#7")
+}
+else{
+    hideChat(0)
+}

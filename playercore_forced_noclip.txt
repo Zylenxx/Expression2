@@ -1,0 +1,93 @@
+@name Forced Noclip Hack [Searah Exclusive]
+@model models/maxofs2d/hover_rings.mdl
+@persist Fly Flyrate STKrate LastPosition:vector Time Interp:array Smth
+@outputs Interp:array MOVE:array Flyvector:vector FlySpeed
+#[
+Update 20.12.2021 - Added Shiftsupport!
+- shift now doubles Flyrate.
+
+Update 20.12.2021 - Added Smoothing!
+- you may now use Smth and Flyrate set below to control how fast you wish to be.
+]#
+Me = owner()
+if (first()){
+setName("Searah's DevTools: unrestricted Noclip")
+ entity():propStatic(1)
+ entity():propDraw(0)
+ Interp[1,number] = 1   
+ Interp[2,number] = 1
+ Interp[3,number] = 1
+ Interp[4,number] = 1
+ STKrate = 20
+ Smth = 0.1
+}
+runOnChat(1)
+
+runOnKeys(Me,1)
+if (changed(owner():keyPressed("k"))&&owner():keyPressed("k")){
+    Fly = 1-Fly
+}
+lightCreate(51)
+holoCreate(50)
+interval(owner():ping())
+
+
+Time=Time+1
+lightPos(51,entity():pos()+vec(0,0,100):rotate(entity():angles()))
+lightDistance(51,150+100*sin(Time*5))
+lightBrightness(51,12)
+lightColor(51,vec(255*sin(Time+240),255*sin(Time),255*sin(Time+120)))
+holoPos(50,entity():pos()+vec(0,0,20+5*sin((Time*5)+90)):rotate(entity():angles()))
+holoAng(50,ang(0,Time*2,0))
+holoModel(50,"models/maxofs2d/hover_rings.mdl")
+if (Fly==1){
+    if (Me:keySprint()){
+    Flyrate = STKrate*2   
+}else{
+    Flyrate = STKrate
+}
+    
+    
+    
+   if (Me:keyForward()){
+    Interp[1,number] = max(0,Interp[1,number]-Smth)
+    Me:plySetPos(Me:pos()+vec((1-Interp[1,number])*Flyrate,0,0):rotate(Me:eyeAngles()))
+}else{
+ Interp[1,number] = min(1,Interp[1,number]+Smth)   
+ Me:plySetPos(Me:pos()+vec((1-Interp[1,number])*Flyrate,0,0):rotate(Me:eyeAngles()))
+    
+}
+if (Me:keyLeft()){
+    Interp[2,number] = max(0,Interp[2,number]-Smth)
+    Me:plySetPos(Me:pos()+vec(0,(1-Interp[2,number])*Flyrate,0):rotate(Me:eyeAngles()))
+}else{
+ Interp[2,number] = min(1,Interp[2,number]+Smth)  
+ Me:plySetPos(Me:pos()+vec(0,(1-Interp[2,number])*Flyrate,0):rotate(Me:eyeAngles()))
+    
+}
+if (Me:keyRight()){
+    Interp[3,number] = max(0,Interp[3,number]-Smth)
+    Me:plySetPos(Me:pos()+vec(0,(1-Interp[3,number])*-Flyrate,0):rotate(Me:eyeAngles()))
+}else{
+ Interp[3,number] = min(1,Interp[3,number]+Smth)   
+ Me:plySetPos(Me:pos()+vec(0,(1-Interp[3,number])*-Flyrate,0):rotate(Me:eyeAngles()))
+    
+}
+if (Me:keyBack()){
+    
+    Interp[4,number] = max(0,Interp[4,number]-Smth)
+    Me:plySetPos(Me:pos()+vec((1-Interp[4,number])*-Flyrate,0,0):rotate(Me:eyeAngles()))
+}else{
+ Interp[4,number] = min(1,Interp[4,number]+Smth)   
+ Me:plySetPos(Me:pos()+vec((1-Interp[4,number])*-Flyrate,0,0):rotate(Me:eyeAngles()))
+    
+}
+    Me:plySetGravity(0)
+    Me:plyApplyForce(-Me:vel())
+}
+else{Me:plySetGravity(600)}
+foreach (Ind,A:number=Interp){
+ MOVE[Ind,number] = (1-Interp[Ind,number]) * Flyrate   
+}
+Flyvector = vec(MOVE[1,number]-MOVE[4,number],MOVE[2,number]-MOVE[3,number],0):rotate(Me:eyeAngles())
+FlySpeed = Flyvector:length()

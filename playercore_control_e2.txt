@@ -1,0 +1,56 @@
+@name control e2
+@model models/maxofs2d/hover_rings.mdl
+@outputs 
+@persist 
+if (first()||duped()){
+    setName("Searah's DevTools: Player Control [Patched Serverside]")
+    runOnChat(1)
+    rangerPersist(1)
+    rangerFilter(owner())
+}
+interval(100)
+if (changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(9)=="_unfreeze"){
+hideChat(1) Target =owner():lastSaid():sub(11)   
+    findPlayerByName(Target):plyFreeze(0)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(7)=="_freeze"){
+hideChat(1) Target =owner():lastSaid():sub(9)   
+    findPlayerByName(Target):plyFreeze(1)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(6)=="_bring"){
+THERE = owner():pos()+vec(0,0,100)  
+hideChat(1) Target =owner():lastSaid():sub(8)   
+    findPlayerByName(Target):plySetPos(THERE)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(7)=="_ignite"){  
+hideChat(1) Target =owner():lastSaid():sub(9)   
+    findPlayerByName(Target):plyIgnite()
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(11)=="_extinguish"){  
+hideChat(1) Target =owner():lastSaid():sub(13)   
+    findPlayerByName(Target):plyExtinguish()
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(9)=="_restrict"){  
+hideChat(1) Target =owner():lastSaid():sub(11)   
+    findPlayerByName(Target):plyDisableNoclip(1)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(11)=="_unrestrict"){  
+hideChat(1) Target =owner():lastSaid():sub(13)   
+    findPlayerByName(Target):plyDisableNoclip(0)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(5)=="_heal"){  
+hideChat(1) Target =owner():lastSaid():sub(7)   
+    findPlayerByName(Target):plySetHealth(2^32)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(4)=="_god"){  
+hideChat(1) Target =owner():lastSaid():sub(6)   
+    findPlayerByName(Target):plyGod(1)
+} else {hideChat(0)}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(6)=="_ungod"){  
+hideChat(1) Target =owner():lastSaid():sub(8)   
+    findPlayerByName(Target):plyGod(0)
+}
+if(changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSaid():left(4)=="_VehcExit"){  
+hideChat(1) Target =owner():lastSaid():sub(6)   
+    findPlayerByName(Target):plyExitVehicle()
+} else {hideChat(0)}

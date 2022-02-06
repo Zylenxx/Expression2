@@ -1,0 +1,65 @@
+@name Death
+@persist NotPressed FC T OEP:vector
+@outputs Ops
+#FetchProjectile = "rj_shockcore"
+#FetchProjectile = "prop_combine_ball"
+#FetchProjectile = "rj_nail"
+interval(40)
+rangerPersist(1)
+Ops=ops()
+T+=0.1
+
+findByClass("rj_shockcore")
+FC = findToArray():count()
+OEP = rangerOffset(owner():shootPos(),owner():shootPos()+vec(1000000,0,0):rotate(owner():eyeAngles())):pos()
+foreach(Orb,O:entity=findToArray()){
+ if (NotPressed==0){
+ O:propSetVelocityInstant(vec(1000,0,0):rotate(heading(O:pos(),ang(180,-180,0),owner():pos()+(vec(200,0,400):rotate(ang(0,Orb*60+T*100,0)))))) 
+}
+}
+NotPressed = owner():keySprint()
+if(NotPressed==1){
+   foreach(Orb,O:entity=findToArray()){
+        O:propSetVelocityInstant(vec(10000,0,0):rotate(heading(O:pos(),ang(180,-180,0),OEP)))
+        O:setMass(50000)
+    } 
+}
+
+
+#owner():plySetHealth(2100-(FC*10))
+holoCreate(55)
+holoPos(55,owner():pos()+vec(0,0,200))
+holoModel(55,"models/sprops/misc/alphanum/alphanum_star_3.mdl")
+holoMaterial(55,"models/debug/debugwhite")
+holoColor(55,vec(255,2,0))
+holoScale(55,vec(6,6,6))
+if (first()){
+holoEntity(55):soundPlay(1,999999,"weapons/portalgun/portal_ambient_loop1.wav")
+soundPitch(55,50)
+}
+for (I=1,10){
+ local GEO1 = "models/sprops/geometry/sphere_18.mdl"
+ local ROT = ang(I*242.7+(T*I)*6,I*710.44+(T*I)*2,I*94.16+(T*I)*3)+ang(0,T*30,0)
+ holoCreate(I)
+ holoScale(I,vec(0.5,0.5,0.5))
+ holoColor(I,hsv2rgb((I*45+T*84)%360,0.5,1))
+ holoModel(I,GEO1)
+ holoPos(I,owner():pos()+vec(0,0,owner():boxSize():z()/2)+vec(70,0,0):rotate(ROT))   
+ holoMaterial(I,"models/wireframe")
+}
+if (T==2){
+        for (I=1,10){
+    holoEntity(I):setTrails(10,1,1,"effects/beam001_white",vec(255,255,255),255)
+    }
+}
+#[
+holoCreate(100)
+holoModel(100,"models/sprops/geometry/fdisc_132.mdl")
+holoScale(100,vec(FC*0.1+1))
+holoPos(100,owner():eyeTrace():pos())
+holoMaterial(100,"models/debug/debugwhite")
+holoDisableShading(100,1)
+holoColor(100,vec(100,0,0))
+holoAlpha(100,128)
+holoAng(100,90*ang(owner():eyeTrace():hitNormal())+ang(0,90,0))
+]#

@@ -1,0 +1,23 @@
+@name ReviveTool
+@model models/maxofs2d/hover_rings.mdl
+@persist T
+@outputs ShitCode:string
+if(first()){
+    ShitCode=getCode()
+    setName("Searah's Dev Tools: Revive AOE")
+}
+interval(200)
+T+=1
+T=max(1,T%10)
+if (owner():weapon():type()=="medkit_thrower"){
+    if(owner():keyReload()==1){
+        findByClass("player")
+        Ply=findToArray()[T,entity]
+        if (Ply:isAlive()==0&&Ply:pos():distance(owner():pos())<200){
+        hint("reviveattempt - "+Ply:name(),1)
+                concmd("aowl revive "+Ply:steamID64()) 
+                owner():soundPlay(1,10,"vfx/fizzler_shutdown_01.wav")  
+        }
+    }
+ 
+}

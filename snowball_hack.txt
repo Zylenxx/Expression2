@@ -1,0 +1,15 @@
+@name Deadly snowballs
+interval(40)
+rangerPersist(1)
+rangerFilter(findToArray())
+rangerFilter(owner())
+ET = rangerOffset(owner():shootPos(),owner():eyeTrace():pos())
+findByClass("snowball_thrown")
+foreach(S,Snow:entity=findToArray()){
+ #if (holoEntity(S):isValid()==0){holoCreate(S)}
+ Snow:setMass(50000)   
+ #holoReset(S,"models/Roller.mdl",vec(1,1,1),vec(255),"")
+ Snow:propSetVelocityInstant(vec(10000,0,0):rotate(heading(Snow:pos(),ang(180,-180,0),ET:pos())))
+ #holoPos(S,Snow:pos())
+ #holoParent(S,Snow)
+}
