@@ -13,3 +13,4 @@ if (changed(owner():lastSaidWhen())&&changed(owner():lastSaid())&&owner():lastSa
   BringTarget = owner():lastSaid():sub(9)   
     findPlayerByName(BringTarget):plyFreeze(1)
 }
+# this will not work if plycore is client only!
