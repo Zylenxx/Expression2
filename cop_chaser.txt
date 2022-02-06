@@ -7,6 +7,8 @@
 @persist Entity:entity WorldHitCheck:array Worldcheck:array
 @persist ChaseException:array WorldCheck1 WorldCheck2
 @persist AdditionalException:entity Frame:number Left Right
+
+# This is for simfphys vehicles! Not all vehicles may work.
 interval(230)
 if (first()||duped()){
     holoCreate(50)
