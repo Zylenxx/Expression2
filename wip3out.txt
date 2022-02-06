@@ -1,0 +1,370 @@
+@name WIP3OUT
+@persist  MWF MWB ROT T N A D W S X Y VelM
+@persist  ShipArray:array ShipPos:vector ShipAng:angle SpeedMod ShipSize ShipType:string Speed Hover HoverHeight Hue
+@persist  Acaris:array Goteki:array Poseidon:array  ShipPropCount Idle
+@persist [FHD HDPLUS WXGAPLUS SXGA WXGA_16_10 WXGA_16_9 Center SelectedResolution CUSTOM]:vector2 # HUD resolutions
+@inputs   W A S D Active Driver:entity
+@inputs   W03HUD:wirelink
+@outputs  Code:string Hover ROT T HVEL [P1 P2 CamPos]:vector CamAng:angle CamZoom:number
+#[Requires pod controller, Apply on it directly.
+
+Uses Outputs for camera controller.
+Map these:
+CamPos => Camera Position
+CamAng => Camera Angle
+CamZoom => Camera: "FOV"
+Wirelink[EGP] => E2:"W03HUD"
+
+Make sure to disable client side movement for the camera controller.
+
+Thisll create a holographic ship you can control.
+
+Should you experience Blocks instead of the models, make sure these things apply:
+
+ - You have Sprops:Workshop edition
+(- All the required models are cached already via the spawnmenu)
+ - wire_holograms_modelany is set to 1 !
+
+Enjoy!
+
+]#
+
+
+# Shortened mapper.
+function wMap(  Ent1:entity,Ent2:entity,MatchingVariable:string ){  
+  Ent1:createWire(Ent2,MatchingVariable,MatchingVariable)  
+
+# Maps an output of an entity to another, with the same variable name.
+}
+
+if (first()){
+    ##Code = getCode()
+    W03HUD:egpClear()
+    # Clear the hud.
+    
+    setName(
+"Searah's Antigravity Ship E2
+Created 27/12/2021
+Centronium Works (C) All rights reserved."
+)   
+   # sets an e2's name. 
+    
+    
+ #[//////////////// Customizable Settings! /////////////////////]#
+ HoverHeight =    10                 # Hover height in HU
+ SpeedMod    =    4.740              # Controls Max Speed (Multiplier)
+ ShipSize    =    3.000              # Ship Scale (Multiplier) (Multiplies Hoverheight!)
+ ColorA      =    hsv2rgb(160,0.7,0.2)  # Body color
+ ColorB      =    hsv2rgb(220,0.5,1) # Cockpit color 
+ ShipType    =    "Poseidon"           # Ship type! You can now choose a ship.
+
+ #[////////////////////////////HUD///////////////////////////////]#
+ #     this e2 has an EGPv3 Hud. These are settings for it.
+ #[//////////////////////////////////////////////////////////////]#
+
+ # Should you use a custom resolution* , please enter accordingly.
+ # *predefined X and Y values are from creators GMOD resolution.
+  X = 1600
+  Y = 800
+
+ # List of resolutions we can use:
+  FHD            = vec2(1920,1080)
+  HDPLUS         = vec2(1600,900)
+  WXGAPLUS       = vec2(1440,900)
+  SXGA           = vec2(1280,1024)
+  WXGA_16_10     = vec2(1280,800)
+  WXGA_16_9      = vec2(1280,720)
+  CUSTOM         = vec2(X,Y)
+
+ # Depending on resolution of your GMOD window, please use accordingly.
+  SelectedResolution = CUSTOM
+
+ #[///////////////////////////// CODE ///////////////////////////]#
+
+ #[/////////////////////////////INTERNALS - HUD/////////////////////////////]#
+  #[///////////////////////////// FUNCTIONS /////////////////////////////]#
+function vector2 map_2Res( Value:vector2 ){
+ # we expect inputs between -1 and 1, mapping to 0 and 1
+ VX   =Value:x()
+ VY   =Value:y()
+ SclX =VX/2+0.5
+ SclY =VY/2+0.5
+ return vec2(SclX,1-SclY)*SelectedResolution
+
+ # This maps hud elements to the screen where 0,0 is the middle.
+}
+function vector2 map_2ResB( Value:vector2 ){
+ VX=Value:x()
+ VY=Value:y()
+ return vec2(VX,VY)*SelectedResolution
+
+ # This maps sizes where 1,1 is the whole screen size.
+}
+
+function vector hex_2RGB( HEX:string ){
+return vec(HEX:sub(1,2):toNumber(16),
+           HEX:sub(3,4):toNumber(16),
+           HEX:sub(5,6):toNumber(16))
+ # This converts RRGGBB hex data into a color vector.
+}
+
+function number map_TextSZ( Size:number ){
+    return (Size*X*0.66)/1000
+ # This scales text based on the resolution.
+}
+
+ # 1PX = scale of 1,1 !
+ # you have full resolution usage here. Very nice!
+function square(    Index,Size:vector2,Place:vector2,Color:string,Alpha ){
+ W03HUD:egpBox(     Index,map_2Res(Place),map_2ResB(Size))
+ W03HUD:egpColor(   Index,hex_2RGB(Color))
+ if (Alpha<255){
+    W03HUD:egpAlpha(Index,Alpha)
+ }
+ # Compact version of drawing a square on the hud.
+ # This scales to the resolution.
+}
+
+function squareHollow( Index,Size:vector2,Place:vector2,Color:string,Alpha ){
+ W03HUD:egpBoxOutline( Index,map_2Res(Place),map_2ResB(Size))
+ W03HUD:egpColor(      Index,hex_2RGB(Color))
+ if (Alpha<255){
+ W03HUD:egpAlpha(      Index,Alpha)
+ }
+ # Compact version of drawing a hollow square on the hud.
+ # This scales to the resolution.
+}
+
+function tri_Defined( Index,Size:vector2,Place:vector2,Color:string,Alpha ){
+ W03HUD:egpTriangle(  Index,map_2Res(Place)+map_2ResB(Size/2),map_2Res(Place)+map_2ResB(Size/2)*vec2(-1,1),map_2Res(Place)-map_2ResB(Size/2))
+ W03HUD:egpColor(     Index,hex_2RGB(Color))
+ if (Alpha<255){
+ W03HUD:egpAlpha(     Index,Alpha)
+ }
+ # Compact version of drawing a triangle on the hud.
+ # This scales to the resolution.
+}
+
+function text(   Index,Text:string,Size,Place:vector2,Color:string,Alpha ){
+ W03HUD:egpText( Index,Text,map_2Res(Place))
+ W03HUD:egpSize( Index,map_TextSZ(Size)) 
+ W03HUD:egpColor(Index,hex_2RGB(Color))
+ W03HUD:egpAlign(Index,0)
+ if (Alpha<255){
+ W03HUD:egpAlpha(Index,Alpha)
+ } 
+ # Compact version of drawing text on the screen. 
+ # This scales to the resolution.
+}
+
+ #hud mapping
+ square(1,              vec2(0.2,0.1),  vec2(0,-0.9),    "090909",128)
+ square(2,              vec2(0.2,0.1),  vec2(0,0.9),     "090909",128)
+ tri_Defined(3,         vec2(0.1,0.1),  vec2(0.3,-0.9),  "090909",128)
+ tri_Defined(4,         vec2(-0.1,0.1), vec2(-0.3,-0.9), "090909",128)
+ tri_Defined(5,         vec2(0.1,-0.1), vec2(0.3,0.9),   "090909",128)
+ tri_Defined(6,         vec2(-0.1,-0.1),vec2(-0.3,0.9),  "090909",128)
+ squareHollow(7,        vec2(0.2,0.03), vec2(0,-0.85),   "00AADD",255)
+ squareHollow(8,        vec2(0.2,0.01), vec2(0,-0.9),    "00AADD",255)
+ text(14,               "KPH",  15,     vec2(0.15,-0.83),"FFFFFF",255)
+
+ #mapping   
+ wMap(entity(),entity():isWeldedTo(),"W")
+ wMap(entity(),entity():isWeldedTo(),"A")
+ wMap(entity(),entity():isWeldedTo(),"S")
+ wMap(entity(),entity():isWeldedTo(),"D")
+ wMap(entity(),entity():isWeldedTo(),"Active")
+ wMap(entity(),entity():isWeldedTo(),"Driver")
+
+ #ranger Setup
+ rangerPersist(1)
+ rangerFlags("W")
+ 
+ # Shape Array. These will create the ship you wish.
+ # now has names.
+ # Model, Offset Position, Angle, Color, Scale 
+ Acaris = array(
+         "models/sprops/triangles/right/size_0/rtri_3x12.mdl"        ,vec(30,0,0)  ,ang()          ,ColorA   ,vec(1,2,1),
+         "models/sprops/rectangles/size_1/rect_3x18x3.mdl"           ,vec(15,0,0)  ,ang(0,0,90)    ,ColorA   ,vec(1,1,2),
+         "models/sprops/triangles/misc/ctri_18.mdl"                  ,vec(15,0,0)  ,ang(0,90,90)   ,ColorA   ,vec(1,1,1),
+         "models/sprops/geometry/hhex_18.mdl"                        ,vec(2.55,0,0),ang(0,-90,90)  ,ColorA   ,vec(0.54,1,1),
+         "models/sprops/triangles_thin/right/size_1/t_rtri_12x24.mdl",vec(14,-5,-3),ang(0,0,135)   ,ColorA   ,vec(1,1,0.5),
+         "models/sprops/triangles_thin/right/size_1/t_rtri_12x24.mdl",vec(14,5,-3) ,ang(0,0,-135)  ,ColorA   ,vec(1,1,0.5),
+         "models/sprops/triangles/right/size_0/rtri_3x18.mdl"        ,vec(15,0,2)  ,ang()          ,ColorB   ,vec(1,1,1),
+         "models/sprops/geometry/qhex_12.mdl"                        ,vec(3,0,2)   ,ang(0,180,0)   ,ColorB   ,vec(1,1,0.58)
+        )
+        
+ Goteki = array(
+         "models/sprops/cuboids/height06/size_1/cube_6x6x6.mdl"      ,vec(-0.5,0,0.5) ,ang(-5,0,0)    ,ColorB,vec(0.4,0.75,0.75),
+         "models/sprops/geometry/qhex_12.mdl"                        ,vec(3.5,0,0.5)  ,ang(0,0,0)     ,ColorB,vec(1,1.5,0.9),
+         "models/sprops/cuboids/height06/size_1/cube_6x6x6.mdl"      ,vec(1.65,0,-1)  ,ang(0,0,0)     ,ColorA,vec(1.65,1,0.3),
+         "models/sprops/cuboids/height06/size_1/cube_6x6x6.mdl"      ,vec(-1.6,0,0.1) ,ang(0,0,0)     ,ColorA,vec(0.6,1,0.53),
+         "models/sprops/cuboids/height06/size_1/cube_6x6x6.mdl"      ,vec(-1.6,3.5,0) ,ang(0,0,0)     ,ColorA,vec(0.3,0.5,0.3),
+         "models/sprops/cuboids/height06/size_1/cube_6x6x6.mdl"      ,vec(-1.6,-3.5,0),ang(0,0,0)     ,ColorA,vec(0.3,0.5,0.3),
+         "models/sprops/cuboids/height12/size_1/cube_12x42x12.mdl"   ,vec(7,6,-0.58)  ,ang(0,0,0)     ,ColorA,vec(0.6,0.5,0.4),
+         "models/sprops/cuboids/height12/size_1/cube_12x42x12.mdl"   ,vec(7,-6,-0.58) ,ang(0,0,0)     ,ColorA,vec(0.6,0.5,0.4),
+         "models/sprops/geometry/qhex_12.mdl"                        ,vec(20,6,-0.58) ,ang(0,0,0)     ,ColorA,vec(1,2,0.925),
+         "models/sprops/geometry/qhex_12.mdl"                        ,vec(20,-6,-0.58),ang(0,0,0)     ,ColorA,vec(1,2,0.925),
+         "models/sprops/geometry/qhex_12.mdl"                        ,vec(-4.5,6,0)   ,ang(0,180,180) ,ColorA,vec(1,2,0.7),
+         "models/sprops/geometry/qhex_12.mdl"                        ,vec(-4.5,-6,0)  ,ang(0,180,180) ,ColorA,vec(1,2,0.7),
+         "models/sprops/geometry/t_qdisc_18.mdl"                     ,vec(-4,1.5,0.7) ,ang(0,180,0)   ,ColorA,vec(0.5,1.4,0.5),
+         "models/sprops/geometry/t_qdisc_18.mdl"                     ,vec(-4,-1.5,0.7),ang(0,180,0)   ,ColorA,vec(0.5,1.4,0.5),
+         "models/sprops/trans/exhaust/tip_2.mdl"                     ,vec(-4,-1.5,0)  ,ang(-15,180,90),ColorA,vec(0.5),
+         "models/sprops/trans/exhaust/tip_2.mdl"                     ,vec(-4,1.5,0)   ,ang(-15,180,90),ColorA,vec(0.5)
+        )
+ 
+ Poseidon = array(
+         "models/sprops/misc/domes/size_3/dome_36x18.mdl"            ,vec(4,0,0)          ,ang(20,0,0)     ,ColorB,vec(0.2),
+         "models/sprops/misc/domes/size_3/dome_36x18.mdl"            ,vec(4,1,0)          ,ang(0,0,-90)    ,ColorA,vec(0.17,0.17,0.2),
+         "models/sprops/misc/domes/size_3/dome_36x18.mdl"            ,vec(4,-1,0)         ,ang(0,0,90)     ,ColorA,vec(0.17,0.17,0.2),
+         "models/sprops/misc/domes/size_3/dome_36x18.mdl"            ,vec(3,0,0)          ,ang(-90,0,0)    ,ColorA,vec(0.2,0.2,0.2),
+         "models/sprops/misc/domes/size_3/dome_36x18.mdl"            ,vec(4,0,0)          ,ang(200,0,0)    ,ColorA,vec(0.23,0.23,0.22),
+         "models/props_silo/wall_vent.mdl"                           ,vec(2,4.5,1.2)      ,ang(-30,180,180),ColorA,vec(0.1,0.05,0.09),
+         "models/props_silo/wall_vent.mdl"                           ,vec(2,-4.5,1.2)     ,ang(-30,180,180),ColorA,vec(0.1,0.05,0.09),
+         "models/sprops/geometry/fhex_12.mdl"                        ,vec(4,-4.5,0)       ,ang(0,0,0)      ,ColorA,vec(0.5,0.8,0.5),
+         "models/sprops/geometry/fhex_12.mdl"                        ,vec(4,4.5,0)        ,ang(0,0,0)      ,ColorA,vec(0.5,0.8,0.5),
+         "models/sprops/rectangles_superthin/size_1_5/rect_6x24.mdl" ,vec(10,5.2,-1.2)    ,ang(0,0,102)    ,ColorA,vec(0.6,0.3,1.4),
+         "models/sprops/rectangles_superthin/size_1_5/rect_6x24.mdl" ,vec(10,-5.2,-1.2)   ,ang(0,0,78)     ,ColorA,vec(0.6,0.3,1.4),
+         "models/sprops/geometry/t_qhex_24.mdl"                      ,vec(15.8,4.8,0.45)  ,ang(0,180,-33)  ,ColorA,vec(0.2,0.17,0.18),
+         "models/sprops/geometry/t_qhex_24.mdl"                      ,vec(15.8,-4.8,0.45) ,ang(0,180,33)   ,ColorA,vec(0.2,0.17,0.18),
+         "models/sprops/geometry/t_hhex_12.mdl"                      ,vec(4,6,-1.5)       ,ang(0,0,-135)   ,ColorA,vec(0.5,0.1,0.7),
+         "models/sprops/geometry/t_hhex_12.mdl"                      ,vec(4,-6,-1.5)      ,ang(0,0,135)    ,ColorA,vec(0.5,0.1,0.7),
+         "models/sprops/geometry/t_hhex_12.mdl"                      ,vec(15,6.2,-1.5)    ,ang(0,0,-110)   ,ColorA,vec(0.7,0.1,0.5),
+         "models/sprops/geometry/t_hhex_12.mdl"                      ,vec(15,-6.2,-1.5)   ,ang(0,0,110)    ,ColorA,vec(0.7,0.1,0.5),
+         "models/sprops/geometry/fhex_12.mdl"                        ,vec(0.75,-2,1)      ,ang(0,0,0)      ,ColorA,vec(0.4),
+         "models/sprops/geometry/fhex_12.mdl"                        ,vec(0.75,2,1)       ,ang(0,0,0)      ,ColorA,vec(0.4),
+         "models/engines/turbine_s.mdl"                              ,vec(0,0,1.5)        ,ang(0,0,0)      ,ColorA,vec(0.1,0.2,0.2),
+         "models/engines/turbine_s.mdl"                              ,vec(1,0,-0.5)       ,ang(0,0,0)      ,ColorA,vec(0.1,0.2,0.2),
+         "models/autocannon/autocannon_20mm_compact.mdl"             ,vec(18,5,-2)        ,ang(0,0,90)     ,ColorA,vec(0.1),
+         "models/autocannon/autocannon_20mm_compact.mdl"             ,vec(18,-5,-2)       ,ang(0,0,90)     ,ColorA,vec(0.1),
+         "models/hunter/misc/shell2x2e.mdl"                          ,vec(17,-1,-2)       ,ang(90,0,0)     ,ColorA,vec(0.1,0.1,0.15),
+         "models/hunter/misc/shell2x2e.mdl"                          ,vec(17,1,-2)        ,ang(-45,-90,-90),ColorA,vec(0.1,0.1,0.15),
+         "models/engines/emotorsmall2.mdl"                           ,vec(4,0,-4)         ,ang(-90,0,0)    ,ColorB,vec(0.05,0.2,0.2)
+        )
+
+ #Parenter.
+ ShipPos = entity():pos()+vec(-15,0,HoverHeight*ShipSize)
+    holoCreate(300)
+    holoPos(   300,ShipPos)
+    holoAng(   300,ShipAng)
+    holoScale( 300,1/256*vec(1,1,1))
+    
+    switch (ShipType){
+     case "Acaris",ShipArray = Acaris 
+    ShipPropCount = 7 
+    holoEntity(300):soundPlay(1,9999,"acf_extra/airfx/aircraft_jet_a10_loop_1.wav")
+    holoEntity(300):soundPlay(2,9999,"acf_extra/vehiclefx/engines/warthog.wav")
+    Idle = 40
+    break   
+     case "Goteki",ShipArray = Goteki 
+    ShipPropCount = 16  
+    holoEntity(300):soundPlay(1,9999,"acf_extra/airfx/aircraft_jet_a10_loop_1.wav")
+    holoEntity(300):soundPlay(2,9999,"acf_engines/v8_special.wav")
+    holoEntity(300):soundPlay(3,9999,"acf_extra/vehiclefx/boost/supercharger.wav")
+    Idle = 30
+    break
+    
+    case "Poseidon",ShipArray = Poseidon 
+    ShipPropCount = 28 
+    holoEntity(300):soundPlay(1,9999,"acf_extra/vehiclefx/boost/supercharger.wav")
+    holoEntity(300):soundPlay(2,9999,"acf_extra/airfx/turbo.wav")
+    holoEntity(300):soundPlay(3,9999,"acf_extra/vehiclefx/engines/abrams.wav")
+    Idle = 40
+    break 
+    
+    }
+    
+for(I=0,ShipPropCount){
+    G = 1+(I*5)
+    holoCreate(  I)
+    holoMaterial(I,"models/debug/debugwhite")
+    holoModel(   I,         ShipArray[G,string])
+    holoPos(     I,ShipPos+(ShipArray[G+1,vector])*ShipSize)
+    holoAng(     I,ShipAng+ ShipArray[G+2,angle])
+    holoColor(   I,         ShipArray[G+3,vector])
+    holoScale(   I,        (ShipArray[G+4,vector])*ShipSize)
+    holoParent(  I,         holoEntity(300))
+    holoPos(   300,ShipPos)
+    holoAng(   300,ShipAng)
+
+    
+    
+}
+ ShipAng=ang()
+ Center = SelectedResolution/2
+ soundVolume(2,0.5)
+}
+
+interval(25)
+Hue+=2
+#[/////////////////////////////EXTERNALS - SHIP/////////////////////////////]#
+if(changed(Driver)){
+    SelectedResolution = vec2(egpScrH(Driver),egpScrW(Driver))
+  #hud mapping
+ square(1,              vec2(0.2,0.1),  vec2(0,-0.9),    "090909",128)
+ square(2,              vec2(0.2,0.1),  vec2(0,0.9),     "090909",128)
+ tri_Defined(3,         vec2(0.1,0.1),  vec2(0.3,-0.9),  "090909",128)
+ tri_Defined(4,         vec2(-0.1,0.1), vec2(-0.3,-0.9), "090909",128)
+ tri_Defined(5,         vec2(0.1,-0.1), vec2(0.3,0.9),   "090909",128)
+ tri_Defined(6,         vec2(-0.1,-0.1),vec2(-0.3,0.9),  "090909",128)
+ squareHollow(7,        vec2(0.2,0.03), vec2(0,-0.85),   "00AADD",255)
+ squareHollow(8,        vec2(0.2,0.01), vec2(0,-0.9),    "00AADD",255)
+ text(14,               "KPH",  15,     vec2(0.15,-0.83),"FFFFFF",255)
+   
+    
+    
+    
+}
+
+N=(N+1)%5
+if (N==1){ P1=holoEntity(300):pos() }
+if (N==4){ P2=holoEntity(300):pos() }
+HVEL    = HVEL*0.8+( P1:distance(P2)*0.2 )
+ShipYaw = ang()+ang(0,ROT/4,0)
+Hover   = (Hover*0.7)+30*(1-rangerOffset(holoEntity(300):pos(),holoEntity(300):pos()-vec(0,0,HoverHeight*ShipSize)):fraction())
+ShipPos = ShipPos:setZ(ShipPos:z()-(T*(HoverHeight*ShipSize/1000))+(Hover*(HoverHeight*ShipSize/100)))+vec(MWF-MWB,0,0):rotate(ShipAng)
+if ( changed(floor(Hover*10)) ){
+ T=T*0.75  
+}else{T=T+6}
+
+
+if (Active==1){
+    CamPos=holoEntity(300):pos()-(vec(40,0,-10)*ShipSize):rotate(ShipAng)
+    CamAng=heading(CamPos,ang(180,-180,0),holoEntity(300):pos())
+    CamZoom=70+(HVEL)
+}
+holoPos(300,ShipPos)
+
+if (W==1){
+      MWF = min(15*SpeedMod,MWF+(0.1*SpeedMod) ) 
+}else{MWF = MWF*0.97}
+if (S==1){
+      MWB = min(15*SpeedMod,MWB+(0.1*SpeedMod) ) 
+}else{MWB = MWB*0.97}
+if (A==1){
+    ROT=ROT+2
+}
+if (D==1){
+    ROT=ROT-2
+}
+ROT=ROT*0.95
+ShipAng   = ShipAng*0.8+0.2*((ShipAng+ang(0,ROT/4,0)):setRoll(-ROT*2))
+holoAng(300,ShipAng)
+
+VelM   = min(1250,ceil((HVEL*6)))/1250
+Thrust = abs((MWF-MWB)/(15*SpeedMod))
+VelM   = min(1250,ceil((Thrust*1250)))/1250
+#[/////////////////////////////INTERNALS - HUD/////////////////////////////]#
+   #[///////////////////////////// DISPLAY /////////////////////////////]#
+      #testing. Static elements will be shoved into the "first()" tab.
+square(10,     vec2(0.2*VelM,0.03),         vec2(-0.2*(1-VelM),-0.85),     "00AADD",255)
+square(11,     vec2(0.2*Thrust,0.01),       vec2(-0.2*(1-Thrust),-0.9),    "00AADD",255)
+tri_Defined(12,vec2(0.015,0.03),            vec2(-0.187+(VelM/2.5),-0.85), "00AADD",255)
+tri_Defined(15,vec2(0.005,-0.01),           vec2(-0.195+(Thrust/2.5),-0.9),"00AADD",255)
+text(13,       ceil((HVEL*6)):toString(),15,vec2(-0.18,-0.83),             "FFFFFF",255)
+
+soundPitch(1,Idle+10+VelM*200)
+soundPitch(3,Idle+50+VelM*200)
+soundPitch(2,Idle+VelM*52)
+soundVolume(1,min(0.5,max(0,(VelM*2)-0.5)))
+soundVolume(3,min(0.2,max(0,(VelM*2)-0.2)))

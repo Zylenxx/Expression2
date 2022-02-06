@@ -1,0 +1,161 @@
+@name Cop chaser
+@inputs RPM GetGear
+@outputs Left Right Throttle STR Steer Gear Follow Brake EngineStart EngineStop LocalPlayerpos:vector Out:string
+@outputs AdditionalException:entity Ops ChaseException:array ChasedCarHasNoE2:number Debug01:array
+@persist PlayerPos:vector EntityPos:vector EntityAngles:angle  
+@persist WallCheck:string CarSpeedInfo:string CarDriveInfo:string
+@persist Entity:entity WorldHitCheck:array Worldcheck:array
+@persist ChaseException:array WorldCheck1 WorldCheck2
+@persist AdditionalException:entity Frame:number Left Right
+interval(230)
+if (first()||duped()){
+    holoCreate(50)
+    holoCreate(51)
+    holoCreate(52)
+    rangerPersist(1)
+    rangerFilter(entity())
+    rangerFilter(entity():isWeldedTo())
+    ChaseException:insertEntity(1,entity():isWeldedTo())
+    ChaseException:insertEntity(1,owner())  
+    entity():isWeldedTo():createWire(entity(),"Steer","Steer")
+    entity():isWeldedTo():createWire(entity(),"Throttle","Throttle")
+    entity():isWeldedTo():createWire(entity(),"Eject Driver","Throttle")
+    entity():isWeldedTo():createWire(entity(),"Set Gear","Gear")
+    entity():isWeldedTo():createWire(entity(),"Brake/Reverse","Brake")
+    entity():isWeldedTo():createWire(entity(),"Engine Stop","EngineStop")
+    entity():isWeldedTo():createWire(entity(),"Engine Start","EngineStart")
+    entity():createWire(entity():isWeldedTo(),"RPM","RPM")
+    entity():createWire(entity():isWeldedTo(),"GetGear","Gear")
+}
+Ops=ops()
+
+Out = WallCheck+"\n\n"+CarSpeedInfo+"\n\n"+CarDriveInfo
+WallCheck = "Cop Chasing AI |Searah \nWall likeliness:     "+round(((60-min(60,WorldCheck1+WorldCheck2))/0.3))+"% | Wall hit Prediction:"+round(((30-WorldHitCheck:sum())/0.3))+"%"
+CarSpeedInfo = "Speed information: HU/s:"+round(entity():vel():length())
+if (STR<0){
+CarDriveInfo = "Drive information:\nSteering Left |Gear: "+round(GetGear)+"|Throttle: "+round(Throttle,2)*100+"% \nBraking/Reverse: "+round(Brake,2)*100+"%"
+}
+if (STR>0){
+CarDriveInfo = "Drive information:\nSteering Right |Gear: "+round(GetGear)+"|Throttle: "+round(Throttle,2)*100+"% \nBraking/Reverse: "+round(Brake,2)*100+"%"
+}
+if (STR==0){
+CarDriveInfo = "Drive information:\nSteering Neutral |Gear: "+round(GetGear)+"|Throttle: "+round(Throttle,2)*100+"% \nBraking/Reverse: "+round(Brake,2)*100+"%"
+}
+
+#[
+if (changed(lastSaid())&&lastSaid()=="!dontChase"){
+    ChaseException:insertEntity(1,lastSpoke():vehicle())
+}
+]#
+Frame = Frame +1
+if (Frame > 1000){Frame=0}
+findExcludeEntities(ChaseException)
+    foreach(P,Ply:entity=players()){
+        if (Ply:vehicle():isValid()){
+findAllowEntity(Ply)
+        }    else {
+    ChaseException:insertEntity(1,Ply)   
+        }
+    }
+
+findExcludeEntity(owner())
+findByClass("player")
+
+PlayerPos = findClosest(entity():pos()):boxCenterW()
+EntityPos = entity():isWeldedTo():boxCenterW()
+LocalPlayerpos = toLocal(EntityPos,EntityAngles,PlayerPos,EntityAngles)/80
+
+BBOX = entity():isWeldedTo():boxSize()
+
+Player = findClosest(entity():pos())
+Entity = entity():isWeldedTo()
+#[Normal]# #EntityAngles = entity():isWeldedTo():angles()*ang(1,1,1)
+#[Faces you when spawning chassis]# EntityAngles = entity():isWeldedTo():angles()*ang(1,1,1)-ang(0,90,0)
+
+#basically replacable by rangers here
+for (I=1,30){
+    #Worldcheck[I,number]=(EntityPos+(vec(BBOX:x()/2,10*I,40):rotate(EntityAngles))):isInWorld()
+    #Worldcheck[I+30,number]=(EntityPos+(vec(-BBOX:x()/2,10*I,40):rotate(EntityAngles))):isInWorld()
+    WorldHitCheck[I,number]=((I/30)*EntityPos+(1-(I/30))*PlayerPos):isInWorld()
+}
+Dir1 = vec(BBOX:x()*0.5, 300, 40):rotate(EntityAngles)
+R1 = rangerOffset(300, EntityPos, Dir1)
+if(R1:hit()){
+    WorldCheck1 = R1:distance() * 0.1
+}else{
+    WorldCheck1 = 30
+}
+
+Dir2 = vec(-BBOX:x()*0.5, 300, 40):rotate(EntityAngles)
+R2 = rangerOffset(300, EntityPos, Dir2)
+if(R1:hit()){
+    WorldCheck2 = R2:distance() * 0.1
+}else{
+    WorldCheck2 = 30
+}
+#[
+Dir3 = PlayerPos - EntityPos
+Dist = Dir3:length()
+R3 = rangerOffset(Dist, EntityPos, Dir3)
+if(R3:hit()){
+    WorldHitCheck[1, number] = R3:distance() * 30  / Dist
+}else{
+    WorldHitCheck[1, number] = 30
+}
+]#
+
+# AI arrow indicator
+holoPos(50,entity():isWeldedTo():pos()+vec(0,0,120+32*sin(Frame*4)))
+holoAng(50,entity():isWeldedTo():angles()+ang(0,90+Frame*4,180))
+holoScale(50,vec(4,4,4))
+holoMaterial(50,"red")
+holoModel(50,"models/sprops/misc/alphanum/alphanum_arrow_a.mdl")
+
+holoDisableShading(50,1)
+if (PlayerPos:distance(entity():isWeldedTo():pos())>Entity:vel():length()){
+    EngineStart = 1+(random()/100)
+    EngineStop = 0
+    Follow = 1
+    Throttle = (PlayerPos:distance(entity():isWeldedTo():pos())/1000)-0.3
+    STR = -LocalPlayerpos:x()/10
+}
+else{
+    EngineStart = 0
+    EngineStop = 1+(random()/100)
+    Follow = 0
+    Throttle = 0
+}
+
+if(WorldCheck1 + WorldCheck2 < 60){
+    if (WorldCheck1>WorldCheck2){
+        STR = -1*LocalPlayerpos:x()
+    }
+    elseif  (WorldCheck1<WorldCheck2){
+        STR = 1*LocalPlayerpos:x()
+    }
+    else{
+        STR = 0
+    }
+    Brake = 1
+    Throttle = 0
+    }
+    else{Brake = 0}
+if (WorldHitCheck:sum()< 25){
+    EngineStart = 0
+    EngineStop = 1
+}
+Throttle = min(1,Throttle)
+
+if (RPM <5000&&RPM>5500){Gear=min(Gear+1,8)}
+if (RPM < 2000){Gear=max(Gear-1,0)}
+if (abs(STR)<1/10){
+    STR = 0
+}
+if ((Entity:vel():length()>(Player:vel():length()*1.005))&&PlayerPos:distance(entity():isWeldedTo():pos())<1500){
+    Brake = (Entity:vel():length()-Player:vel():length())/1000
+}
+
+Left = 1-rangerOffset(EntityPos,EntityPos+vec(-300,0,0):rotate(EntityAngles)):fraction()
+Right = 1-rangerOffset(EntityPos,EntityPos+vec(300,0,0):rotate(EntityAngles)):fraction()
+Brake = min(1,Brake)
+Steer = (3*Left-3*Right)+STR

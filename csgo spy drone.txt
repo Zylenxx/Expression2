@@ -1,0 +1,50 @@
+@name testing csgo prop behavior
+@outputs Ops
+@persist Drones:array Droneduration:array ID N_Loc_busy:array N_Ply:entity
+if (first()||duped()){
+    holoCreate(1)
+    cameraCreate(2)   
+    cameraZoom(2,80) 
+    runOnChat(1)
+}
+interval(20)
+Ops=ops()
+
+# Function for the drones.
+
+    # fetch activity to determine target.
+    if (!N_Ply:isTyping()){
+        N_Loc_busy[1,vector] = N_Ply:pos()+vec(50*cos(ID/8),50*sin(ID/4.88),220)
+        }
+
+    # drone creation.
+    holoModel(1,"models/props_survival/drone/br_drone.mdl")
+    holoPos(1,(holoEntity(1):pos()*0.95)+0.05*N_Loc_busy[1,vector])
+    holoAng(1,heading(N_Ply:pos(),ang(0,-180,180),holoEntity(1):pos())*ang(0,1,0))
+    cameraPos(2,holoEntity(1):pos()+vec(-200,0,70):rotate(holoEntity(1):angles()))
+    cameraAng(2,holoEntity(1):angles()+ang(20,0,0)+owner():eyeAngles())
+   
+    setName("CSGO Drone Spy")
+    # this is the part which has chat message control  - it works until it doesnt
+    if (changed(owner():lastSaid())&&owner():lastSaid():left(5)=="_view"){
+        HC_2 = 1
+        cameraToggle(2,1)
+        N_Ply = findPlayerByName(owner():lastSaid():sub(7))
+    }else{
+        HC_2 = 0
+    }
+    # this somehow works
+    if (changed(owner():lastSaid())&&owner():lastSaid():left(5)=="_hide"){
+        cameraToggle(2,0)
+        N_Ply = owner()
+        HC_1 = 1
+    }else{
+        HC_1 = 0
+    }
+    
+    if (HC_1==1||HC_2==1){
+        hideChat(1)
+    }
+    else{
+        hideChat(0)
+    }

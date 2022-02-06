@@ -1,0 +1,108 @@
+@name Picker E2
+@model models/bull/various/usb_stick.mdl 
+@persist SavedMDLNames:array
+if (first()){
+    runOnChat(1)
+}
+setName("Picker | Phys obj : "+owner():aimEntity():model())
+interval(owner():ping())
+holoCreate(1)
+holoCreate(2)
+holoColor(1,hsv2rgb(frac(owner():aimEntity():boxSize():length()/360)*360,1,1))
+holoColor(2,hsv2rgb(frac(owner():aimEntity():boxSize():length()/360)*360,1,1))
+if (owner():aimEntity():isValid()==0){
+holoPos(1,owner():aimPos())
+holoModel(1,"")
+holoAng(1,ang())
+holoMaterial(1,"dev/white")
+holoScale(1,vec(1,1,1)/5)
+holoAlpha(1,10)
+
+holoPos(2,owner():aimPos())
+holoModel(2,"")
+holoAng(2,ang())
+holoMaterial(2,"dev/white")
+holoScale(2,vec(1,1,1)/5)
+holoAlpha(2,0)
+}
+else{
+holoPos(1,owner():aimEntity():pos())
+holoModel(1,owner():aimEntity():model())
+holoAng(1,owner():aimEntity():angles())
+holoScale(1,vec(1,1,1))
+holoMaterial(1,"models/wireframe")
+holoAlpha(1,5)
+
+holoPos(2,owner():aimEntity():pos())
+holoModel(2,owner():aimEntity():model())
+holoAng(2,owner():aimEntity():angles())
+holoScale(2,vec(1,1,1))
+holoMaterial(2,"dev/white")
+holoAlpha(2,10)
+
+
+}
+if (changed(owner():lastSaidWhen())&&owner():lastSaid()=="_save"){
+    SVHC = 1
+    if(owner():aimEntity():isValid()){
+    if (changed(owner():aimEntity():model())){
+    SavedMDLNames:pushString(owner():aimEntity():model())
+    owner():sendMessage("<color=0,255,0>Saved Model Name: "+owner():aimEntity():model())
+    }
+    else{owner():sendMessage("<color=96,96,255>Not saving model, previous save was indentical.")}
+    }else{
+    owner():sendMessage("<color=96,96,255>No model selected.")
+    }
+}else{
+SVHC = 0
+}
+if (changed(owner():lastSaidWhen())&&owner():lastSaid()=="_list"){
+    LHC = 1
+    if(SavedMDLNames:count()>0){
+        owner():sendMessage("<color=96,96,128>Saved Model Names:")
+        foreach(MDL,Name:string=SavedMDLNames){
+        owner():sendMessage(MDL+" | Model: "+SavedMDLNames[MDL,string])
+        }
+    }else{
+    owner():sendMessage("<color=128,96,96>List is empty.")
+    }
+}else{
+LHC = 0
+}
+if (changed(owner():lastSaidWhen())&&owner():lastSaid()=="_clearList"){
+    CLHC = 1
+    owner():sendMessage("Cleared List.")
+    SavedMDLNames:clear()
+}else{
+CLHC = 0
+}
+if (changed(owner():lastSaidWhen())&&owner():lastSaid():left(8)=="_toolSet"){
+    TSHC = 1
+    if (SavedMDLNames[owner():lastSaid():sub(10):toNumber(),string]:length()>0){
+    owner():sendMessage("<color=0,255,0>Selected Model: "+SavedMDLNames[owner():lastSaid():sub(10):toNumber(),string])
+    concmd("aowl tool creator")
+    concmd("creator_name "+SavedMDLNames[owner():lastSaid():sub(10):toNumber(),string])
+    # set the type to PROP , Type 4.
+    concmd("creator_type 4")
+    }
+    else{
+    owner():sendMessage("<color=255,0,0>Your specified index returned no model or you have not saved any models.")
+    }
+}else{
+TSHC = 0
+}
+if (changed(owner():lastSaidWhen())&&owner():lastSaid():left(7)=="_remove"){
+    RMVHC = 1
+    if(SavedMDLNames[owner():lastSaid():sub(9):toNumber(),string]:length()>0){
+    owner():sendMessage("<color=0,255,0>Removed Model "+SavedMDLNames[owner():lastSaid():sub(9):toNumber(),string]+" .")
+    SavedMDLNames:remove(owner():lastSaid():sub(9):toNumber())
+    }
+    else{
+    owner():sendMessage("<color=255,96,96>Index doesnt exist or has no model.")
+    }
+}else{
+RMVHC = 0
+}
+
+if (RMVHC==1||TSHC==1||LHC==1||SVHC==1||CLHC==1){hideChat(1)}
+else{hideChat(0)}

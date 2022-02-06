@@ -1,0 +1,17 @@
+@name MiniFPS Booster
+@model models/Items/HealthKit.mdl
+@persist Timer
+interval(1000)
+concmd("r_cleardecals")
+lightCreate(1)
+lightPos(1,entity():pos()+vec(0,0,50))
+lightDistance(1,500)
+lightBrightness(1,6)
+lightColor(1,hsv2rgb(250,1,1))
+if (changed(owner():eyeAngles())==0){
+Timer = Timer +1
+}
+if (Timer > 10){
+    concmd("lua_run_self collectgarbage()")
+    Timer = -60
+}
