@@ -1,0 +1,34 @@
+@name EGP Hud 3d Map
+@inputs EGPv3:wirelink
+@persist Me:entity Pos:vector2 Offset:vector2
+if (first()){
+    entity():createWire(entity():isWeldedTo(),"EGPv3","wirelink")
+    EGPv3:egpClear()
+    Me = owner()
+}
+interval(200)
+function vector2 toProjectedVector2(Vec:vector){
+    local Z = max(1,(1-Vec:z()))
+    return vec2(Vec:x()*(1+(0.005*((Vec:y())+128))),(Vec:y()*0.5)+(Z*(1+(0.002*((Vec:y())+128)))))*vec2(1,owner():eyeAngles():pitch()/45)
+    # Projects a 3d vector to a 2d vector.
+}
+Pos = vec2(egpScrW(Me)*0.5,egpScrH(Me)*0.3)
+
+foreach(P,Ply:entity=players()){
+    if (Ply:pos():distance(Me:pos())<1000){
+    local PlyLocal = (Ply:pos()-Me:pos())*0.2
+    local Offset = vec2(0,-PlyLocal:z()/4)
+    EGPv3:egpCircle(P,Pos+toProjectedVector2(PlyLocal/4*vec(1,1,0))+Offset,vec2(4,4))
+    EGPv3:egpLine(150+P,Pos+toProjectedVector2(PlyLocal/4*vec(1,1,0)),Pos+toProjectedVector2(PlyLocal/4*vec(1,1,0))+Offset)
+    EGPv3:egpColor(P,Ply:getWeaponColor())
+}else{
+    EGPv3:egpRemove(P)
+    EGPv3:egpRemove(150+P)
+}
+}
+for(I=-10,10){
+EGPv3:egpLine(100+I,Pos+toProjectedVector2(vec(256,I*26,0)/4),Pos+toProjectedVector2(vec(-256,I*26,0)/4))
+EGPv3:egpLine(50+I,Pos+toProjectedVector2(vec(I*26,-256,0)/4),Pos+toProjectedVector2(vec(I*26,256,0)/4))
+EGPv3:egpAlpha(100+I,20)
+EGPv3:egpAlpha(50+I,20)
+}

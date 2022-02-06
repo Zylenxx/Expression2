@@ -1,0 +1,172 @@
+@name Searah's E2 Voxel Particle Engine 
+@persist ParticleTick:number ParticleMax ParticleSpeed ParticleSize ParticleModus:string
+@persist Interval RandomSet:array ParticleCustomModel:string Particle SetPerf
+
+#[ //////////////  ABOUT THE ENGINE  ///////////////
+This is a Concept for voxel-based Particle Creation.
+You are allowed to suggest features or contribute to 
+code to make this a highly modular chipset.
+/////////////////////////////////////////////////]#
+
+#[ ///////////////////////////////    SETTINGS   ////////////////////////////////
+
+ParticleMax     : the maximum amount of particles to use.
+                the maximum total holos you can use is
+                250 .
+            
+ParticleSpeed   : the simulation speed.
+                  this is a (N)x modifier. Smaller => 1/N , Bigger => N/1
+                
+ParticleSize    : a scalar modifier for the particle engine.
+                  this is a (N)x modifier. Smaller => 1/N , Bigger => N/1
+                
+ParticleModus   : the Shape the particle engine should use.
+                  (VOXEL_2D,VOXEL_3D,DIAMOND,CUSTOM)
+                  'CUSTOM' will let you Input a String corresponding to the 
+                  model you wish.
+
+/////////////////////////////////////////////////////////////////////////////]#
+
+
+#Functions [engine components]
+    
+    # Creates a particle.
+    function particleCreate(Index){
+        holoCreate(Index)
+        holoDisableShading(Index,1)
+        holoMaterial(Index,"dev/white") #stock flat material :D
+        if (ParticleModus == "CUSTOM"){
+        holoModel(Index,ParticleCustomModel)
+    }
+    }
+    
+    # Removes all particles.
+    function particlesClear(){
+        holoDeleteAll()
+    }
+    
+    # Removes a defined particle.
+    function particleKill(Index){
+        holoDelete(Index)
+    }
+    
+    # RGB Coloring of an particle.
+    function particleColor1(Index,Red,Green,Blue){
+        holoColor(Index,vec(Red,Green,Blue))
+    }
+    
+    # HSV Coloring of an particle.
+    function particleColor2(Index,Hue,Saturation,Value){
+        holoColor(Index,hsv2rgb(Hue,Saturation,Value))
+    }
+    
+    # Function to create 2d Vector particles.
+    function particle2D(Index,X,Y,Facing,PartSZ){
+        holoPos(Index,entity():pos()+(vec(0,Y,X):rotate(ang(0,Facing,0))))   
+        holoAng(Index,entity():angles()+ang(0,Facing,0))
+        holoScale(Index,vec(0.01,PartSZ,PartSZ))
+    }
+    
+    # Function to create 3d Vector Particles.
+    function particle3D(Index,X,Y,Z,PartSZ){
+        holoPos(Index,entity():pos()+vec(X,Y,Z))
+        holoScale(Index,vec(PartSZ,PartSZ,PartSZ))
+    }
+    
+    # Function to cause particles to glow using lights.
+    # This feature might break if the limit has reached.
+    # To see how many lights you can put, take a look at
+    # Serverside set values.
+ #[   function particleGlow(Index,Boolean:string){
+        if (Boolean == "true"){
+            lightCreate(Index+500)
+            lightPos(Index+500,holoEntity(Index):pos())
+            lightDistance(Index+500,200)
+            lightColor(Index+500,holoEntity(Index):getColor())
+            lightBrightness(Index+500,6)
+        }
+        if (Boolean == "false"){
+            lightRemove(Index+500)
+        }   
+    }
+]#
+
+# Initialization.
+    if ( first() || duped() ){
+        SetPerf             =   (100/players():count())
+        ParticleMax         =        20
+        ParticleSpeed       =         1/SetPerf  
+        ParticleSize        =         1
+        ParticleModus       = "VOXEL_2D"
+        ParticleCustomModel = "models/holograms/rcube.mdl"
+        switch (ParticleModus){
+            case "VOXEL_2D", setName("Searah's E2 Voxel Particle Engine [2D Modus]") break
+
+            case "VOXEL_3D", setName("Searah's E2 Voxel Particle Engine [3D Modus]") break
+
+            case "CUSTOM"  , setName("Searah's E2 Voxel Particle Engine [CUSTOM MODE]") break
+
+        }
+         
+        for (Particle = 1, ParticleMax ){
+            RandomSet[Particle,number] = random(0,500)/10
+             # this is a random number seed for fire particles.
+            particleCreate(Particle) 
+        }
+    }
+
+
+# Realtime rendering starts here.
+    
+#[/////////////////////////// ABOUT REALTIME RENDERING ////////////////////////
+Realtime rendering is not always quick. The following code is mostly written by
+the person who wants this particle system. This is the part where most of copy-
+pasting for certain particle assets will begin; As such, we shall provide a 
+method to allow quick saving of the engine code. [Work in progress]
+/////////////////////////////////////////////////////////////////////////////]#
+ runOnTick(1)   
+    # The following example is a 2d Vector particle system
+    
+    # Particle Automation. All coordinates are LOCAL to the e2 chip.
+    while(perf(SetPerf)){
+        # Defined intervals // change if needed to maintain tickquota.    
+        ParticleTick=ParticleTick+ParticleSpeed
+        Particle = (Particle+13)%ParticleMax
+        # XY Plotting
+            X      = frac((ParticleTick+RandomSet[Particle,number])/50)*50
+            Y      = 2*sin(_PI*2*frac((ParticleTick+RandomSet[Particle,number])/50))*15*sin(Particle*45+ParticleTick)
+            Facing = 0
+            PartSZ = 1-1.5*sin(X*_PI/4)
+        particle2D(Particle,X,Y,Facing,PartSZ)
+
+        # Color Plotting
+            Hue         = min(X,30)
+            Saturation  = 1-(min(X,70)/70)
+            Value       = Saturation
+        particleColor2(Particle,Hue,Saturation,Value)
+    }    
+
+
+    # The following example is a 3d Vector particle system.
+#[
+
+    # Defined intervals // change if needed to maintain tickquota.    
+    interval(Interval)
+        ParticleTick++
+
+    # Particle Automation. All coordinates are LOCAL to the e2 chip.
+    for (Particle = 1, ParticleMax ){
+            
+        # XYZ Plotting
+            Z           =   frac(((Particle/ParticleMax)*100+ParticleTick*2)/100)*100
+            X           =   cos(Z*_PI)*50*sin((Particle/ParticleMax)*720+ParticleTick*2)
+            Y           =   cos(Z*_PI)*50*cos((Particle/ParticleMax)*720+ParticleTick*2)
+            Scale       =   (X*Y)/1000
+        particle3D(Particle,X,Y,Z,Scale)
+        
+            Hue         =   sin(Z*_PI)*180
+            Saturation  =   1
+            Value       =   1 
+        particleColor2(Particle,Hue,Saturation,Value)
+    }
+]#

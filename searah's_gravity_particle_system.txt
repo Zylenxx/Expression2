@@ -1,0 +1,104 @@
+@name Searah's Gravity Particle System
+@persist [Compensation GravityConstant HitWorld SpeedMul Particles LifeTime I RNDMSZ RNDMVEL OPLIMIT]:number
+@persist [ParticleEntry ParticleEntryPrev ParticleTime ParticleTime2 ParticleWorldTrace ParticleWorldTracePos ParticleWorldTraceNorm TraceHitWorld Drag Gravity InitialVel]:array
+@persist [NULL]:vector
+@persist [Type]:string
+@outputs ParticleTime:array Ops:number
+if (first()||duped()){
+    rangerPersist(1)
+    
+    # Changable Settings Here!
+    SpeedMul       =         0.1
+    Particles      =         50
+    LifeTime       =         18
+    Type           =  "DEVTEST"
+    RNDMSZ         =         50
+    RNDMVEL        =         0
+    OPLIMIT        =     5000
+    # do not change.
+    GravityConstant = (gravity()/100)*(1/SpeedMul)
+}
+interval(50+Compensation)
+Ops = ops()
+if (ops()>OPLIMIT){
+    Compensation=Compensation+1
+}
+else{
+    Compensation=Compensation-1
+}
+I=max(mod(I+1,Particles),1)
+holoMaterial(I,"models/debug/debugwhite")
+#holoDelete(max(mod(I,Particles),1))
+if (I<Particles&!holoEntity(I):isValid()){
+    holoCreate(I)
+    holoModel(I,"models/sprops/geometry/sphere_30.mdl")
+    holoDisableShading(I,1)
+    ParticleEntry[I,vector] = entity():pos()+vec(random(RNDMSZ,-RNDMSZ),random(RNDMSZ,-RNDMSZ),100)
+    ParticleEntryPrev[I,vector] = entity():pos()+vec(random(RNDMSZ,-RNDMSZ),random(RNDMSZ,-RNDMSZ),100)
+    holoPos(I,ParticleEntry[I,vector])
+    TraceHitWorld[I,number] = -1 
+    Drag[I,number] = 1 
+    holoScale(I,vec(0.1,0.1,0.1))
+    holoAlpha(I,96)
+    holoColor(I,hsv2rgb(mod(I*4,360),1,1))
+    ParticleTime[I,number]=0
+    ParticleTime2[I,number]=-1
+}
+
+# 4 directional Normal retrieval. Very expensive!
+function angle vector:getfloorNormal(P){
+    A = heading(ParticleEntry[P,vector],ang(),ParticleEntryPrev[P,vector])
+    return A
+}
+
+foreach(P,Particle:vector=ParticleEntry){
+
+# define the Trace Method
+ParticleWorldTrace[P,number]=rangerOffset(100,Particle-vec(0,0,10),vec(0,0,-1)):distance()
+
+# define the World Trace
+ParticleWorldTracePos[P,vector]=rangerOffset(100,Particle,vec(0,0,-1)):pos()
+
+# define the World Normal
+ParticleWorldTraceNorm[P,angle]=ParticleWorldTracePos[P,vector]:getfloorNormal(P)
+
+# define behavior when in and out of the world
+if (Particle:isInWorld()==1&&ParticleWorldTrace[P,number]>4){
+ TraceHitWorld[P,number] = 1  
+
+ # Gravity Dynamics
+ Gravity[P,vector] = Gravity[P,vector]-vec(0,0,ParticleTime[P,number]/GravityConstant) 
+}
+else{
+ # Bounce Dynamics 
+ ParticleTime[P,number] = 995
+ TraceHitWorld[P,number] = -TraceHitWorld[P,number]*0.75
+ Drag[P,number] = Drag[P,number] * 0.75
+ #Gravity[P,vector] = (Gravity[P,vector]*vec(0.75,0.75,-0.75))
+}
+
+# push the particle up if its not in the world
+if ((Particle-vec(0,0,10)):isInWorld()==0){
+    Particle = Particle+vec(0,0,GravityConstant)
+}
+
+# switch case for starting the particle again 
+switch (ParticleTime[P,number]){
+    case 0, InitialVel[I,vector] = SpeedMul*vec(random(-RNDMVEL,RNDMVEL),random(-RNDMVEL,RNDMVEL),15) Gravity[P,vector] = InitialVel[P,vector] break
+    case 1, Gravity[P,vector] = InitialVel[P,vector] break
+    case 995, Gravity[P,vector] = (-Gravity[P,vector]:rotate(Gravity[P,vector]:getfloorNormal(P))*Drag[P,number])
+    case 996, ParticleTime[P,number] = ParticleTime[P,number]-994 break
+}
+
+#tick adjustments
+ParticleEntry[P,vector] = ParticleEntry[P,vector]+Gravity[P,vector]
+ParticleEntryPrev[I,vector] = ParticleEntryPrev[I,vector]+Gravity[P,vector]
+ParticleTime[P,number]  = ParticleTime[P,number]+(SpeedMul*Drag[P,number])
+ParticleTime2[P,number]  = ParticleTime2[P,number]+(SpeedMul*Drag[P,number])
+
+}
+
+for (I=1,Particles){
+#move particle
+holoPos(I,ParticleEntry[I,vector])
+}

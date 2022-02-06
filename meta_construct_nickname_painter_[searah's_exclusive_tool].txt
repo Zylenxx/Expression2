@@ -1,0 +1,83 @@
+@name Meta Construct nickname painter [Searah's Exclusive tool]
+@persist Name:string Color:vector Colors:array Emotes:array Position:vector2 Alpha:number Flags:array TempString:string
+@outputs PaintedName:string 
+#[
+This tool can be used to create various types of painted nicknames you want.
+]#
+if (first()){
+Emotes = array(
+                "<color=255,255,255>:sleepyjill:",
+                "<color=255,255,255>:luv:",
+                "<color=255,255,255>:trollface:",
+                "<color=255,255,255>:white_heart",
+                "<color=255,255,255>:white_square:",
+                "<color=255,255,255>:eagle:",
+                "<color=255,255,255>:moyai:"
+                )
+Flags = array(
+                "<color=255,255,255>:flag_de:",
+                "<color=255,255,255>:flag_ru:",
+                "<color=255,255,255>:flag_jp:",
+                "<color=255,255,255>:flag_no:",
+                "<color=255,255,255>:flag_sv:",
+                "<color=255,255,255>:flag_fr:",
+                "<color=255,255,255>:flag_it:",
+                "<color=255,255,255>:flag_sp:",
+                "<color=255,255,255>:flag_us:",
+                "<color=255,255,255>:flag_br:",
+                "<color=255,255,255>:flag_gb:"
+                )
+
+# sends the preview to the player after changes. use this when editing simplepaint or fadepaint with emotes.
+function sendNick(){
+    owner():sendMessage("<color=0,255,0>Your modified Nickname will look like this:")
+    owner():sendMessage(TempString)
+    PaintedName=TempString
+}
+
+# color formatting for meta.
+function string colorFormat(Color:vector){
+    return "<color="+min(round(Color:x()),255)+","+min(round(Color:y()),255)+","+min(round(Color:z()),255)+">"
+}
+
+
+# simplistic name painting.
+function simplePaint(Name:string,Color:vector){
+    owner():sendMessage("<color=0,255,0>Your modified Nickname will look like this:")
+    owner():sendMessage(colorFormat(Color)+Name)
+}
+
+
+
+# fade between two colors across the entire name.
+function fadePaint(Name:string,Color1:vector,Color2:vector){
+    foreach(L,Letter:string=Name:explode("")){
+            ColorFade = (L/Name:length())*Color1 + (1-L/Name:length())*Color2
+            Colors[L,string] = colorFormat(ColorFade)+Letter
+        TempString = Colors:concat(1,Name:length())
+    }
+}
+
+
+
+# add an emote on the end or beginning of your name.
+function addEmote(Text:string,Where:string,What:string){
+    switch (Where){
+        case "end",   TempString =  Text+What break
+        case "begin", TempString =  What+Text break
+        }   
+}
+
+
+
+# This is setup for your name and such. 
+# All usages listed:
+# fadePaint(name,color 1, color 2)
+# addEmote(content,placement,emote/flag)
+# sendNick() to preview
+
+fadePaint("Searah",hsv2rgb(200,1,1),hsv2rgb(270,1,1))
+addEmote(TempString,"begin",Emotes[1,string])
+addEmote(TempString,"end",Emotes[2,string])
+sendNick()
+}

@@ -1,0 +1,12 @@
+interval(20)
+function string entity:undecorateNick(){
+UN = This:toString():explode("[")
+return UN[3,string]:replace("]","")
+}
+if (changed(owner():lastSaidWhen())&&owner():lastSaid():left(27)=="_expression2.undecorateNick"){
+    concmd("say "+findPlayerByName(owner():lastSaid():sub(29):replace("(",""):replace(")","")):undecorateNick())
+}
+
+#[
+function entity:undecorateNick() do local UN = {ply:ToString():Explode("[")} return UN[3]:Replace("]","") end
+]#

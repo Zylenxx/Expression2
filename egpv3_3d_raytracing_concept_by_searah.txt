@@ -1,0 +1,180 @@
+@name EGPv3 3d Raytracing Concept by Searah
+@persist Origin:vector FRONTEND:string Me:entity Angle:angle FOV T G UP PT MSP:vector MH PP:vector MA:angle [C Traces PRJ]:array Nscale Interval Mainloop:string
+@inputs EGPv3:wirelink  
+@outputs Ops FRONTEND:string Code:string
+#include "3d_to2d_engine"
+
+#[/////////////////////////    ABOUT    ////////////////////////]#
+# This is a Raytracing concept put into the third dimension!     #
+#                                                                #
+# Creator: Searah~? / Zylenxx                                    #
+# Copyright Centronium Works 2018-2022                           #
+# Distribution of this software only given by creator.           #
+# Upon distribution you are allowed to utilize parts of          #
+# the files functions.                                           #
+#[//////////////////////////////////////////////////////////////]#
+
+if( first() ){
+ Code = getCode()
+ Interval = 100
+ Nscale = 60
+ EGPv3:egpClear()
+ # define
+ rangerFilter(players())
+ rangerPersist(1)
+ entity():createWire(entity():isWeldedTo(),"EGPv3","wirelink")
+
+
+ # on init
+ FOV = 360
+ #Me  = players()[randint(1,players():count()),entity]    
+ Me = owner()
+}
+
+function ranger entity:eyeTrace2(Offset:vector){
+
+    return rangerOffset(This:shootPos(),This:shootPos()+Offset)
+
+}
+function number ops_adjust(OpsTarget:number){
+
+if (ops()>OpsTarget){Interval+=10}
+else{Interval-=1} 
+return Interval
+}
+
+interval(ops_adjust(9000))
+FRONTEND = "EGPv3 3d Raytracing Concept by Searah
+Running on "+Interval+"ms ("+floor(1/(Interval*0.001))+" cycles a second predicted)
+Operations: "+Ops+" ("+floor((1/(Interval*0.001)*(Mainloop:length())))/1000+" KB a second)"
+setName(FRONTEND)
+Ops = ops()
+G++
+G=G%(Nscale+20)
+
+
+
+if(T==0){
+ PP = Me:pos()
+ EGPv3:egpClear()
+ MSP = Me:shootPos()   
+ MA  = Me:angles()
+ MH  = rangerOffset(PP,PP+vec(0,0,1000)):fraction()*1000
+}
+# Point trace origin
+Origin = MSP
+
+    
+# angle per row
+UP = ((Nscale-T)*PT)/2
+
+if(G<Nscale+20){
+T=G
+T=min(Nscale,T)
+# per row rendering
+for(I=1,Nscale){
+    local P = 0
+   
+    Traces[I,ranger] = rangerOffset(MSP+vec(0,0,-50+(MH*T/Nscale)),
+         MSP+(vec(1000,0,-50+(MH*T/Nscale)):rotate(MA+ang( 0 , -FOV/2 + (I*FOV/Nscale) , 0 )))
+        )
+#[
+    if(holoEntity(I):isValid()==0){
+    holoCreate(I)
+    }
+    holoDisableShading(I,1)
+    holoAng(I,ang())
+    holoPos(I,Traces[I,ranger]:pos())
+]#
+    C[I,vector] = (Traces[I,ranger]:hitNormal()*128+vec(128))
+    local H = -256+(256*(T/Nscale))
+   PRJ[I,vector2]  = vec2(256,512-128-((MH/1000*128)*T/Nscale))+toProjectedVector2(0.1*toLocal(Traces[I,ranger]:pos(),ang(),MSP,MA+ang(180,90,0))*vec(1,1,0))
+}   
+}
+EGPv3:egpBox(200,vec2(256,256),vec2(512,512))
+EGPv3:egpColor(200,vec())
+EGPv3:egpAlpha(200,196)
+EGPv3:egpPolyOutline(T,PRJ)
+EGPv3:egpAlpha(T,30*min(1,2*max(0,sin(T*_PI))))
+EGPv3:egpColor(T,vec(128,255,155))
+
+foreach(L,Line:string=(FRONTEND+"
+Current Player:"+Me:toString()+"
+Centronium Works (C)2017-2022"):explode("
+")){
+    EGPv3:egpText(250+L,Line,vec2(15,L*15))
+    EGPv3:egpFont(250+L,"consolas")
+}
+
+if(first()){    
+  Mainloop="
+
+function ranger entity:eyeTrace2(Offset:vector){
+
+    return rangerOffset(This:shootPos(),This:shootPos()+Offset)
+
+}
+function number ops_adjust(OpsTarget:number){
+
+if (ops()>OpsTarget){Interval+=10}
+else{Interval-=1} 
+return Interval
+}
+
+interval(ops_adjust(9000))
+FRONTEND = \"EGPv3 3d Raytracing Concept by Searah
+Running on \"+Interval+\"ms (\"+floor(1/(Interval*0.001))+\" cycles a second predicted)
+Operations: \"+Ops+\" (\"+floor((1/(Interval*0.001)*(Mainloop:length())))/1000+\" KB a second)\"
+setName(FRONTEND)
+Ops = ops()
+G++
+G=G%(Nscale+20)
+
+
+
+if(T==0){
+ PP = Me:pos()
+ EGPv3:egpClear()
+ MSP = Me:shootPos()   
+ MA  = Me:angles()
+ MH  = rangerOffset(PP,PP+vec(0,0,1000)):fraction()*1000
+}
+# Point trace origin
+Origin = MSP
+
+    
+# angle per row
+UP = ((Nscale-T)*PT)/2
+
+if(G<Nscale+20){
+T=G
+T=min(Nscale,T)
+# per row rendering
+for(I=1,Nscale){
+    local P = 0
+   
+    Traces[I,ranger] = rangerOffset(MSP+vec(0,0,-50+(MH*T/Nscale)),
+         MSP+(vec(1000,0,-50+(MH*T/Nscale)):rotate(MA+ang( 0 , -FOV/2 + (I*FOV/Nscale) , 0 )))
+        )
+#[
+    if(holoEntity(I):isValid()==0){
+    holoCreate(I)
+    }
+    holoDisableShading(I,1)
+    holoAng(I,ang())
+    holoPos(I,Traces[I,ranger]:pos())
+]#
+    C[I,vector] = (Traces[I,ranger]:hitNormal()*128+vec(128))
+    local H = -256+(256*(T/Nscale))
+   PRJ[I,vector2]  = vec2(256,512-128-((MH/1000*128)*T/Nscale))+toProjectedVector2(0.1*toLocal(Traces[I,ranger]:pos(),ang(),MSP,MA+ang(0,90,0))*vec(1,1,0))
+}   
+}
+EGPv3:egpBox(200,vec2(256,256),vec2(512,512))
+EGPv3:egpColor(200,vec())
+EGPv3:egpAlpha(200,196)
+EGPv3:egpPolyOutline(T,PRJ)
+EGPv3:egpAlpha(T,30*min(1,2*max(0,sin(T*_PI))))
+EGPv3:egpColor(T,vec(128,255,155))
+
+"   
+}

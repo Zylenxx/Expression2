@@ -1,0 +1,96 @@
+@name EGP NOTEPAD
+@inputs EGPv3:wirelink String:string
+@persist [NAVUP NAVDOWN NAVCUR INIT LastLineHasStuff]:number
+@persist [ARROWUP ARROWDOWN INTERACTBOX1 INTERACTBOX2]:array StringArr:array
+@outputs CURSOR:vector2 NAVCUR OWNCODE:string BUF:string
+if (first()){
+    EGPv3:egpClear()
+    OWNCODE = getCode()
+    entity():createWire(entity():isWeldedTo(),"EGPv3","wirelink")
+}
+interval(500)
+if (changed(String)){
+    EGPv3:egpClear()
+}
+if (String:length()>9500){
+ String = "The EGP Notepad has thrown an exception.
+In method 'string=Variable(type:string)'
+Line 20
+Expression2.StringBuffer"   
+}else{
+    String = String
+    BUF    = String
+}
+INIT++
+switch(INIT){
+    case 5, 
+        foreach(L,Line:string=String:explode("
+")){
+    StringArr[L,string] = (L+1000):toString():sub(2)+" | "+Line
+    }
+    break        
+    case 10, INIT = 0 break
+    case 20, INIT = 0 break
+    case 90, INIT = 0 break
+}
+findByClass("player")
+ClosestPlayer = findClosest(entity():isWeldedTo():pos())
+CURSOR = EGPv3:egpCursor(ClosestPlayer)
+
+ARROWUP = array(vec2(450,15),vec2(420,60),vec2(480,60))
+ARROWDOWN = array(vec2(450,512-15),vec2(420,512-60),vec2(480,512-60))
+INTERACTBOX1 = array(vec2(420,15),vec2(480,60))
+INTERACTBOX2 = array(vec2(420,512-60),vec2(480,512-15))
+EGPv3:egpRemove(50)
+EGPv3:egpRemove(51)
+EGPv3:egpPoly(50,ARROWUP)
+EGPv3:egpPoly(51,ARROWDOWN)
+EGPv3:egpAlpha(50,128)
+EGPv3:egpAlpha(51,128)
+
+if (inrange(CURSOR,INTERACTBOX1[1,vector2],INTERACTBOX1[2,vector2])){
+if (changed(ClosestPlayer:keyUse())&&ClosestPlayer:keyUse()==1){
+EGPv3:egpColor(50,vec(0,127,0)) 
+NAVUP = 1  
+}else{
+EGPv3:egpColor(50,vec(0,255,0))
+NAVUP = 0
+}   
+}else{
+EGPv3:egpColor(50,vec(255,255,255))
+}
+
+
+if (inrange(CURSOR,INTERACTBOX2[1,vector2],INTERACTBOX2[2,vector2])){
+if (changed(ClosestPlayer:keyUse())&&ClosestPlayer:keyUse()==1){
+EGPv3:egpColor(51,vec(0,127,0)) 
+NAVDOWN = 1  
+}else{
+EGPv3:egpColor(51,vec(0,255,0))
+NAVDOWN = 0
+} 
+}else{
+EGPv3:egpColor(51,vec(255,255,255))
+}
+
+# UI:NAV_SCROLL
+if (NAVUP){
+    NAVCUR=NAVCUR-1
+}
+if (NAVDOWN&&LastLineHasStuff==1){
+    NAVCUR=NAVCUR+1    
+}
+NAVCUR = max(NAVCUR,0)
+
+
+# pipe string into usable viewing
+for (I=1,49){
+EGPv3:egpFont(90+I,"Consolas")
+EGPv3:egpText(90+I,StringArr[I+NAVCUR,string],vec2(0,I*10))
+EGPv3:egpSize(90+I,12)
+}
+LastLineHasStuff = StringArr:exists(NAVCUR+50)
+
+
+
+

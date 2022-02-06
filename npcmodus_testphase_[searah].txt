@@ -1,0 +1,168 @@
+@name NPCModus_TestPhase [Searah]
+@persist Me:entity LocalPlayers:array IsLookingAtMe:array FaceTo:entity
+@persist IsLeftW IsRightW FrontObscured SoundArray:array Dist SoundGroupHi:array SoundGroupRandom:array
+@persist PlyDist:array T DoNPC NEE NotActive
+@outputs What:angle IsLeftW IsRightW FrontObscured Ops OwnCode:string  
+#[
+Me : owner
+LocalPlayers: Array of players near me in a given radius
+IsLookingAtMe: binary check for if they look at me
+FaceTo: face to the first person in the IsLookingAtMe array
+SoundArray: all the female npc sounds needed as their path.
+Dist: the distance for LocalPlayers in hammer units.
+atleast these are my plans, DURR PLA-
+]#
+if (duped()){
+ selfDestruct()   
+}
+
+if (first()){
+    rangerPersist(1)
+    rangerFilter(players())
+DoNPC = 0
+OwnCode = getCode()
+Me = owner() 
+Dist = 800
+SoundArray = array(
+                    "*vo/npc/female01/hi01.wav",            # 1 hi
+                    "*vo/npc/female01/hi02.wav",            # 2 hi
+                    "*vo/npc/female01/doingsomething.wav",  # 3 bored
+                    "*vo/npc/female01/getgoingsoon.wav",    # 4 bored
+                    "*vo/npc/female01/overhere01.wav",      # 5 noticesNearby
+                    "*vo/npc/female01/answer05.wav",        # 6 talkLater
+                    "*vo/npc/female01/answer09.wav",        # 7 talkingToYourself
+                    "*vo/npc/female01/answer18.wav",        # 8 stayOnTopic    - unused
+                    "*vo/npc/female01/answer19.wav",        # 9 stayOnTopic    - unused
+                    "*vo/npc/female01/answer30.wav",        #10 beenMentioned
+                    "*vo/npc/female01/vquestion01.wav",     #11 beingLookedAt
+                    "*vo/npc/female01/heydoc01.wav",        #12 hi
+                    "*vo/npc/female01/heydoc02.wav",        #13 hi
+                    "*vo/npc/female01/outofyourway02.wav"   #14 isInWay - broken function
+                    ) # when you have to index all of them you know itll be used well
+}
+#grouped from SoundArray
+SoundGroupHi = array(
+    1,
+    2,
+    12,
+    13
+    )
+SoundGroupRandom = array(
+            3,
+            4,
+            6,
+            7
+)
+   
+#do they look at me?
+function number entity:looksAtMe(){
+    if (This:aimEntity()==Me&&This:type()=="player"){
+        return 1
+        hint("NPC_PLYLOOKAT",4)
+    }
+    else{
+        return 0
+    }
+}
+
+#look at a person.
+function entity:lookAt(Target:entity){
+    if (Target:isValid()&&Target:isPlayer()){
+    This:plySetAng(This:eyeAngles()*0.5+0.5*heading(This:shootPos(),ang(0,0,180),Target:shootPos()))
+    What = heading(This:shootPos(),ang(0,0,180),Target:shootPos()) # somehow returns 0,90,0 when not suppposed to
+    }else{}
+}
+
+function number wasMentioned(){
+ if(changed(lastSaidWhen())&&lastSaid():match("Searah")[1,string]=="Searah"){
+  return 1 
+  hint("NPC_PLYMENTIONED",4) 
+ }
+    else{
+    return 0
+    }
+}
+
+function number rOFV(P1:vector, P2:vector){
+ return rangerOffset(P1,P2):fraction()   
+}
+function number rOFE(P1:entity, P2:entity){
+ return rangerOffset(P1:shootPos(),P2:shootPos()):fraction()   
+}
+
+function vector localVec(Vec:vector,Ent:entity){
+    return Vec:rotate(Ent:angles())
+}
+
+interval(10)
+Ops = ops()
+NEE+=1
+
+if (changed(owner():keyUse())&&owner():keyUse()){
+DoNPC = 1-DoNPC
+}
+
+if (DoNPC){
+if (NEE%10==1){
+findIncludeEntities(players())
+findInBox(Me:pos()-vec(Dist,Dist,Dist),Me:pos()+vec(Dist,Dist,Dist))
+LocalPlayers = findToArray()
+foreach (N,Ply:entity=LocalPlayers){
+    if (Ply:looksAtMe()){
+    IsLookingAtMe[N,number] = Me:pos():distance(Ply:pos())
+}
+else {IsLookingAtMe[N,number] = inf()}
+PlyDist[N,number] = Me:pos():distance(Ply:pos())
+}
+
+# basically will find shortest distance player looking at you.
+FaceTo = LocalPlayers[IsLookingAtMe:minIndex(),entity]
+if (FaceTo:isPlayer()==0||owner():vel():length()>0){}
+else{
+Me:lookAt(FaceTo)
+}
+# if they look at you, tell them to break eyecontact
+if (Me:aimEntity()==FaceTo){
+    T++  
+    if (T>50){
+    Me:soundPlay(1,3,SoundArray[11,string])
+    T=-9999
+    }
+}
+else
+{T=0}
+
+# if i was mentoioned, play a sound.
+if (wasMentioned()){
+    Me:soundPlay(1,3,SoundArray[10,string])
+}
+
+# npc interaction the likes of hl2 citizens.
+if (FaceTo:looksAtMe()&&FaceTo:keyUse()&&FaceTo:isPlayer()){
+    Me:soundPlay(1,1,SoundArray[SoundGroupHi[random(1,4),number],string])
+    Me:lookAt(FaceTo)
+}
+
+# random talk.
+if (random(0,1000)<2&&owner():vel():length()==0){
+    Me:soundPlay(1,3,SoundArray[SoundGroupRandom[mod(random(1,256),4),number],string])
+}
+
+
+}
+
+if (changed(Me:angles())){NotActive=0}else{
+    NotActive+=1
+}
+
+#[ New! Random walking. It will be consuming a bit more ops.
+    if(NotActive>100){
+         Walkforce = 100
+         IsLeftW = 1-rOFV(Me:shootPos(),Me:shootPos()+localVec(vec(0,100,0),Me))
+         IsRightW = 1-rOFV(Me:shootPos(),Me:shootPos()+localVec(vec(0,-100,0),Me))
+         FrontObscured = 1-rOFV(Me:shootPos(),Me:shootPos()+localVec(vec(70,0,0),Me))
+        Me:plyApplyForce(vec(Walkforce*(1-(2*(FrontObscured))),0,0):rotate(Me:angles()*ang(0,1,0)-ang(0,(IsLeftW-IsRightW)*45,0)))
+    }
+]#
+}
+

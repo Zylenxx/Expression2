@@ -1,0 +1,78 @@
+@name Searah's Raymarching Prototype
+@persist Holos:array RayLength:array Adjust
+@persist ZD:array RayMax RefBoundary FOV Ply:entity Trace:string TraceColor:vector Cheeser
+@persist RayID PerfLim
+@outputs Ops Title:string E2Pos:vector RayMax HolRemSwn 
+@outputs CODE:string
+if (first()||duped()){
+    PerfLim = 10
+    Ply = owner()
+    rangerPersist(1)
+    runOnChat(1)
+    rangerFilter(Ply)
+    Title = "Searahs Raymarching Prototype"
+    holoCreate(500)
+    CODE = getCode()
+    RayMax = 50
+    FOV = 110
+    RefBoundary = holoEntity(500):boxSize():x()*RayMax*0.65
+    #more stuff here later  
+    
+    #going for doublewidth for now
+    for (I=1,RayMax){
+        # base holo creation
+        holoCreate(I)
+        holoPos(I,entity():pos())
+        holoDisableShading(I,1)
+        
+        #array preoccupation
+        Holos[I,number] = 1
+        RayLength[I,number] = 0
+    }
+}
+runOnTick(1)
+while(perf(PerfLim)){
+E2Pos = entity():pos()
+cameraCreate(80)
+cameraPos(80,entity():pos()+vec(0,35,35))
+cameraAng(80,ang(0,-90,0))
+holoAlpha(999,254)
+holoCreate(999)
+holoPos(999,entity():pos()+vec(0,-0.1,35))
+holoDisableShading(999,1)
+holoColor(999,vec(0,0,0))
+holoScale(999,vec(7,0.01,5))
+HolRemSwn = holoRemainingSpawns()
+#nom nom cpu time go 600us++
+#chip can either do it very slow or instantly, sad
+
+
+RayID = ((RayID+9)%RayMax)
+  # Wolfenstein method: trace from eyes for the angle of FOV
+  RayLength[RayID,number]=min(1/(rangerOffset(9999,Ply:shootPos(),vec(1,0,0):rotate(Ply:eyeAngles()*ang(0,1,0)+ang(0,-FOV/2+(RayID*(FOV/RayMax)),0))):distance()),1)
+  ZD[RayID,number]       =300*RayLength[RayID,number] 
+
+
+  # Then scale the holo based on the RayLength
+  holoScale(RayID,vec(RayMax/RefBoundary,0.01,min(255*RayLength[RayID,number],5)))
+
+  # Different Classes , different colors.
+  holoColor(RayID,ZD[RayID,number]*TraceColor)
+  TraceColor=hsv2rgb(mod(15*rangerOffset(9999,Ply:shootPos(),vec(1,0,0):rotate(Ply:eyeAngles()*ang(0,1,0)+ang(0,-FOV/2+(RayID*(FOV/RayMax)),0))):entity():type():length(),360),1,1)
+
+  # finally, place all holos from left to right in order.
+  holoPos(RayID,entity():pos()+vec(0,0,35)+vec(-RayMax/1.25+RayID*1.5,0,0))
+ 
+
+Ops = ops()
+}
+if (chatClk(owner())&&owner():lastSaid():lower()=="_t-w3dm"){
+    hideChat(1)
+    if (cameraToggle(80)==0)
+    {cameraToggle(80,1)}
+    else{cameraToggle(80,0)}
+}
+if(chatClk(owner())&&owner():lastSaid():lower():left("_perflim":length())=="_perflim"){
+ hideChat(1)
+ PerfLim = owner():lastSaid():explode(" ")[2,string]:toNumber()
+}

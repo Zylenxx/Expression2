@@ -1,0 +1,50 @@
+@name TASK MANAGER - OPS GRAPH
+@inputs OPS:number AVGOPS:number
+@inputs EGPv3:wirelink
+@persist [OPSUSAGE TIME]:array [Second Mult]:number I N G Tick
+@outputs [OPSUSAGE TIME]:array [Second Mult]:number
+@outputs OpsSelf:number
+if (first()){
+    entity():createWire(entity():isWeldedTo(),"EGPv3","wirelink")
+    EGPv3:egpClear() 
+    for(Z=1,14){
+    EGPv3:egpLine(200+Z,vec2(20,511-(Z*1000/15000*512)),vec2(50,511-(Z*1000/15000*512)))
+    EGPv3:egpText(110+Z,toString(Z),vec2(0,500-(Z*1000/15000*512)))
+    }
+}
+runOnTick(1)
+
+while(perf()){
+Tick++
+OpsSelf = ops()
+Second = Second + 1
+if (changed(Second)){
+OPSUSAGE[Second,number]=511-(OPS*Mult/15000*512)}
+I+=((Tick%200)==1)
+I = I%100
+    N=I
+    if (Second > 100){
+       N=I+(Second-100)
+    } 
+EGPv3:egpLine(100-I,vec2(I*5,OPSUSAGE[N,number]),vec2((I+1)*5,OPSUSAGE[N,number]))
+EGPv3:egpColor(I,hsv2rgb(max(0,180-(OPS/15000*300)),1,1))
+}
+EGPv3:egpLine(45,vec2(0,511-(AVGOPS*Mult/15000*512)),vec2(512,511-(AVGOPS*Mult/15000*512)))
+EGPv3:egpColor(45,hsv2rgb(220,1,1))
+
+EGPv3:egpText(200,"Ops:         "+toString(OPS),vec2(370,10))
+EGPv3:egpText(498,"Average: "+toString(floor(AVGOPS)),vec2(370,40))
+
+if (OPS>1300){
+EGPv3:egpText(100,"Ops x1000",vec2(25,10))
+Mult = 1
+}
+if (OPS<1300&&OPS>130){
+EGPv3:egpText(100,"Ops x100",vec2(25,10))   
+Mult = 10
+}
+if (OPS<130){
+EGPv3:egpText(100,"Ops x10",vec2(25,10))   
+Mult = 100
+}
+

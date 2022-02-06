@@ -1,0 +1,52 @@
+@name Text To Holos Function Beta [Searah]
+@inputs Text:string
+@persist Tick I Letters:array FadeIn:array Color:vector
+interval(100)
+if (first()||duped()||changed(Text)){
+    holoDeleteAll(1)
+    Color = vec(255,34,36)
+}
+runOnTick(1)
+while(perf()){
+Tick=Tick+1
+function toHolos(Text:string,Line){
+    
+    Letters = Text:explode("")
+    Middle = Letters:count()/2
+    Loop = max(mod(Tick,Letters:count()+1),1)
+    I=(I+9)%Loop
+        
+        Letter = Letters[I,string]
+        if (Letter==" "||Letter=="."||Letter==","||Letter=="/"||Letter=="?"||Letter=="|"||Letter==":"||Letter=="<"||Letter==">"||Letter=="="||Letter=="!"
+        ||Letter=="["||Letter=="]"||Letter=="("||Letter==")"||Letter=="-"||Letter=="+"){
+        switch (Letter){
+            case " ", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0,0,0),entity():angles(),Color,"") break
+            case ".", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_prd.mdl")           break
+            case ",", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_com.mdl")           break
+            case "!", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_xmark.mdl")         break
+            case "?", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_qmark.mdl")         break
+            case "/", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_div.mdl")           break
+            case "|", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_div.mdl")           break
+            case ":", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_colon.mdl")         break
+            case "<", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_lessthan.mdl")      break
+            case ">", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_greaterthan.mdl")   break
+            case "=", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_equal.mdl")         break
+            case "!", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_xmark.mdl")          break    
+            case "[", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_lbracket.mdl")       break    
+            case "]", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_rbracket.mdl")       break    
+            case "(", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_lpar.mdl")           break    
+            case ")", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_rpar.mdl")           break    
+            case "-", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_min.mdl")            break    
+            case "+", holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.1,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_plu.mdl")            break    
+            
+        }
+        
+        }else{
+        holoCreate(I,entity():pos()+vec((Middle-I)*8,0,Line*15):rotate(entity():angles()),vec(0.7,0.01,0.7),entity():angles(),Color,"models/sprops/misc/alphanum/alphanum_"+Letter:lower()+".mdl")
+        }
+    holoDisableShading(I,1)
+    holoDelete(Letters:count()+Loop+1)
+    }
+}
+toHolos(Text,1)
+

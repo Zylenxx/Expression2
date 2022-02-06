@@ -1,0 +1,38 @@
+@name Glitched matrix Effect
+@persist RandAngSet:array T BPM
+if(first()){
+    BPM = (120/180)*500
+    
+    for(I=1,30){
+     holoCreate(I)
+     holoPos(I,entity():pos()+vec(0,0,-400))
+     holoEntity(I):setTrails(15,15,1000,"effects/beam_generic01",hsv2rgb(random(1,359),1,1),255)
+     holoScale(I,vec(0))
+    }
+    RandAngSet = array(
+    ang(0,90,0),
+    ang(0,-90,0),
+    ang(-90,0,0),
+    ang(90,0,0),
+    ang(0,0,90),
+    ang(0,0,-90),
+    ang(0,-90,0),
+    ang(0,90,0),
+    ang(90,0,0),
+    ang(-90,0,0),
+    ang(0,0,-90),
+    ang(0,0,90)
+    )
+    
+}
+
+interval(BPM)
+T++
+for(I=1,30){
+ holoPos(I,holoEntity(I):pos()+vec(0,0,300):rotate(RandAngSet[randint(1,12),angle]))       
+}
+if(T%64==0){
+for(I=1,30){
+     holoPos(I,holoEntity(I):pos():setZ(entity():pos():z()))
+}
+}
