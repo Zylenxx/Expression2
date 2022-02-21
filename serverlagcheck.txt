@@ -1,0 +1,14 @@
+@name ServerLagCheck
+@persist SERVERLAGCHECK
+function number serverTickFree(HissyFitFactor){ #as percentage. 0 = 4 100 = 13
+local HFF = 4+(9*HissyFitFactor/100)
+if(first()){
+SERVERLAGCHECK=4
+}
+SERVERLAGCHECK=(SERVERLAGCHECK+0.1)*(1-0.1*(systime()%0.1<0.02))
+if(SERVERLAGCHECK>(HFF)){
+    return 0
+}else{
+    return 1  
+}
+}
