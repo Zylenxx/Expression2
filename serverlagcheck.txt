@@ -12,3 +12,4 @@ if(SERVERLAGCHECK>(HFF)){
     return 1  
 }
 }
+# thank python1320 for this idea.
