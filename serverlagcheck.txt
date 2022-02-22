@@ -2,7 +2,7 @@
 @persist SERVERLAGCHECK
 #[
     This is a server lag compensator.
-    Usage: number islagging = serverTickFree(number percentage)
+    Usage: number isfree = serverTickFree(number percentage)
     best called on tick, enjoy!
 ]#
 function number serverTickFree( HissyFitFactor ){
