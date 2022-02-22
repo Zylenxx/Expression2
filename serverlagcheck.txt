@@ -6,11 +6,19 @@
     best called on tick, enjoy!
 ]#
 function number serverTickFree( HissyFitFactor ){
+
+    # Factor map. we dont want this to ignore when going for 100
     local HFF = 4 + ( 9 * HissyFitFactor/100 )
+    
     if( first() ){
         SERVERLAGCHECK = 4
     }
+    
+    # actual hacky stuff; this uses iterational multiplication, modulus and addition to produce the median.
+    # as server fps decreases, the multiplier gets applied less, causing an increase in number.
+    # result: you can now detect lag!
     SERVERLAGCHECK = ( SERVERLAGCHECK+0.1 ) * ( 1 - 0.1*( systime() % 0.1 < 0.02 ) )
+    
     if( SERVERLAGCHECK > HFF ){
         return 0
     } else {
