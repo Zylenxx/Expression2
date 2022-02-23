@@ -1,28 +1,30 @@
 @name ServerLagCheck
 @persist SERVERLAGCHECK
-#[
-    This is a server lag compensator.
-    Usage: number isfree = serverTickFree(number percentage)
-    best called on tick, enjoy!
-]#
-function number serverTickFree( HissyFitFactor ){
+#[ Revamped the code as of 23.02.2022
+ + added proper delta check
+ - removed uneccesary iterational code, now runs the same way but has less hassle getting to display when it lags
 
-    # Factor map. we dont want this to ignore when going for 100
-    local HFF = 4 + ( 9 * HissyFitFactor/100 )
-    
-    if( first() ){
-        SERVERLAGCHECK = 4
-    }
-    
-    # actual hacky stuff; this uses iterational multiplication, modulus and addition to produce the median.
-    # as server fps decreases, the multiplier gets applied less, causing an increase in number.
-    # result: you can now detect lag!
-    SERVERLAGCHECK = ( SERVERLAGCHECK+0.1 ) * ( 1 - 0.1*( systime() % 0.1 < 0.02 ) )
-    
-    if( SERVERLAGCHECK > HFF ){
-        return 0
-    } else {
-        return 1  
-    }
+ Usage: serverTickFree(number percentage , number Server_FPS_median )
+ returns: number isTickFree (0 if it isnt, 1 if it is free to run)
+
+ usual delta on the tested server can vary between 0.01 and 0.6.
+ the scaled values are:
+Percentage:         0% |          100%
+Delta:            0.01 |           0.5
+Enjoy! you can include this as follows:
+
+#include 'serverlagcheck'
+
+]#
+
+function number serverTickFree( HissyFitFactor, NORMFPS ){ 
+local HFF = 0.01 + ( 0.49* HissyFitFactor/100 )
+
+SERVERLAGCHECK = abs( abs( curtime()-systime() ) - (NORMFPS-1) ) # NORMFPS is the expected normal fps of the server.
+if( SERVERLAGCHECK > HFF ){
+    return 0
+}else{
+    return 1  
+}
 }
 # thank python1320 for this idea.
