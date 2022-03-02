@@ -1,0 +1,214 @@
+@name Digital Screen Renderer
+#@model models/hunter/blocks/cube6x6x05.mdl
+@inputs DIGISCREEN:wirelink
+@persist INDEX ANGLESTOCK:array POSSTOCK:array DIGISCREEN:wirelink LIMSCREEN:vector2 
+@persist MODE HEIGHT WIDTH RENDERPERF SN SV Who:array PLY:entity
+@persist RENDER FETCH STATUS:string RATIO:vector2
+@persist ENVMAPCUSTOM:array
+@persist FARZ NEARZ FOV POS:vector ANG:angle COL:vector
+@outputs COL:vector INDEX STATUS:string POS:vector ANG:angle
+@outputs CODE:string
+##include "serverlagcheck"
+
+# USE THIS WITH PCB BOARDS ONLY
+
+if(first()){
+ CODE = getCode()
+ rangerPersist(1)
+ runOnChat(1)
+ rangerFilter(players())
+ entity():setMaterial("lights/light_panel_cool")
+ Who                = playersSuperAdmins():add(array(owner())):add(owner():steamFriends())
+ RATIO              = vec2(entity():isWeldedTo():boxSize():x()/entity():isWeldedTo():boxSize():y(),1)
+ SN                 = 200
+ SV                 = 100
+ FOV                = 200
+ FARZ               = 32000
+ NEARZ              = 50
+ RENDERPERF         = 80
+ MODE               = 1048569
+ HEIGHT             = 1048572
+ WIDTH              = 1048573
+ LIMSCREEN          = vec2(128)
+ DIGISCREEN[MODE]   = 3
+ DIGISCREEN[HEIGHT] = LIMSCREEN:x()
+ DIGISCREEN[WIDTH]  = LIMSCREEN:y() 
+ FETCH              = 1 
+ RENDER             = 0
+ STATUS             = "Fetching"
+ concmd("say_local *<c=ff9900>[DIGISCREEN]<stop>: Prefetching Angles. Res:("+LIMSCREEN:x()+"x"+LIMSCREEN:y()+")<stop>*")
+ print(RATIO*16)
+}
+ENVMAPCUSTOM = array(
+"AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF",
+"CCC","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","CCC",
+"CCC","CCC","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","AOF","CCC","CCC",
+"CCC","CCC","CCC","AOF","09F","AOF","09F","AOF","09F","AOF","09F","AOF","09F","CCC","CCC","CCC",
+"CCC","CCC","CCC","09F","AOF","09F","AOF","888","888","888","AOF","09F","AOF","CCC","CCC","CCC",
+"CCC","CCC","CCC","AOF","09F","AOF","CCC","CCC","888","888","09F","AOF","09F","CCC","CCC","CCC",
+"CCC","CCC","CCC","09F","09F","09F","CCC","CCC","888","888","09F","09F","09F","CCC","CCC","CCC",
+"CCC","CCC","CCC","09F","09F","09F","CCC","CCC","888","888","888","09F","09F","CCC","CCC","CCC",
+"CCC","CCC","CCC","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","CCC","CCC","CCC",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2",
+"2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2","2F2"
+)# actual
+#[ENVMAPCUSTOM = array(
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F",
+"000","000","000","000","F0F","F0F","F0F","F0F","000","000","000","000","F0F","F0F","F0F","F0F"
+)]# # missing texture
+function vector getENVMAPPOINTER(Hitnormal:vector){
+    local Checker = ((INDEX+(floor(INDEX/LIMSCREEN:y())))%2)*(1/15)
+    local Angle = heading(vec(),ang(180,180,0),Hitnormal)
+    local FETCHANG = floor((180+Angle:pitch())/(360/15)+Checker)
+    local FETCHYAW = floor((180+Angle:yaw())/(360/15)+Checker)
+    local ENVANG   = (FETCHYAW%15)+1
+    local ENVYAW   = FETCHANG*16
+    local R = ENVMAPCUSTOM[ENVANG+ENVYAW,string]:sub(1,1):toNumber(16)*16
+    local G = ENVMAPCUSTOM[ENVANG+ENVYAW,string]:sub(2,2):toNumber(16)*16
+    local B = ENVMAPCUSTOM[ENVANG+ENVYAW,string]:sub(3,3):toNumber(16)*16
+    return vec(R,G,B)
+}
+
+function number serverTickFree(A,B){return 1} # use if you dont think serverlagprediction is going to work
+
+function number groupChatClk(){
+ local Clk = 0   
+    foreach(P,Ply:entity=Who){
+     if(chatClk(Ply)){
+      Clk++   
+     }   
+    }
+ if(Clk!=0){
+ return 1   
+ }else{
+ return 0   
+ }
+}
+
+function entity groupSpoke(){
+   PLY = noentity() 
+   foreach(P,Ply:entity=Who){
+   if (chatClk(Ply)){ 
+    PLY = Ply
+   }
+   }
+   return PLY
+}
+
+runOnTick(1)
+if(FETCH&&serverTickFree(SN,SV)){
+  STATUS             = "Fetching: "+round(INDEX/((LIMSCREEN:x())*(LIMSCREEN:y()))*100,0)+"%\nIndex:"+INDEX 
+  entity():setColor(vec(64,64,255))
+}
+if(RENDER&&serverTickFree(SN,SV)){
+  STATUS             = "Drawing:   ANG:"+toString(round(ANG+ANGLESTOCK[INDEX,angle]))
+  entity():setColor(vec(255,64,64))
+}
+if(!serverTickFree(SN,SV)){
+  STATUS             = "Paused (Lagging)"
+ entity():setColor(vec(128))
+}
+
+if(changed(RENDER)&&RENDER==1){
+  concmd("say_local *<c=ff9900>[DIGISCREEN]<stop>:Starting render.*")   
+}
+setName("Digital Screen Renderer\nStatus: "+STATUS)
+if(INDEX>((LIMSCREEN:x())*(LIMSCREEN:y()))&&FETCH){
+    INDEX=0
+    RENDER=1
+    FETCH =0   
+}
+   if(groupChatClk()&&lastSaid():lower():left("!set_dssize":length())=="!set_dssize"){
+    local RETURN = groupSpoke():lastSaid():sub("!set_dssize":length()+2):toNumber()
+        LIMSCREEN=vec2(min(512,max(1,RETURN)))
+        DIGISCREEN[HEIGHT] = LIMSCREEN:x()
+        DIGISCREEN[WIDTH]  = LIMSCREEN:y()
+    concmd("say_local *<c=ff9900>[DIGISCREEN]<stop> - New Res:("+LIMSCREEN:x()+"x"+LIMSCREEN:y()+")<stop>*")
+ 
+    }
+    if(groupChatClk()&&groupSpoke():lastSaid():lower()=="!newfetch"){
+    INDEX=0
+    INDEX=0
+    FETCH=1
+    RENDER=0
+    concmd("say_local *<c=ff9900>[DIGISCREEN]<stop>:Fetching Angles. Res:("+LIMSCREEN:x()+"x"+LIMSCREEN:y()+")<stop>*")
+    } 
+    if(groupChatClk()&&groupSpoke():lastSaid():lower():left("!set_perf":length())=="!set_perf"){
+    RENDERPERF = max(5,min(99,groupSpoke():lastSaid():sub("!set_perf":length()+2):toNumber()))
+    concmd("say_local *<c=ff9900>[DIGISCREEN]<stop> - Updating CPU limit. (Percentage: "+RENDERPERF+")<stop>*")
+ 
+    } 
+    if(groupChatClk()&&groupSpoke():lastSaid():lower():left("!set_fov":length())=="!set_fov"){
+    INDEX = 0
+    FOV = max(45,min(999,groupSpoke():lastSaid():sub("!set_fov":length()+2):toNumber()))
+    concmd("say_local *<c=ff9900>[DIGISCREEN]<stop> - Updating FOV. (FOV:"+FOV+")<stop>*")
+ 
+    }
+        if(groupChatClk()&&groupSpoke():lastSaid():lower()=="!sethere"){
+        INDEX = 0
+        POS = groupSpoke():shootPos()
+        ANG = groupSpoke():eyeAngles()
+    } 
+     
+ while(FETCH&&perf()&&serverTickFree(SN,SV)){
+    INDEX++
+    
+    local PITCH = ((FOV/2)-((INDEX%(LIMSCREEN:x()))/LIMSCREEN:x()*FOV))
+    local YAW   = ((-FOV/2)+((floor(INDEX/LIMSCREEN:x())%LIMSCREEN:y())/LIMSCREEN:y()*FOV))
+    #ANGLESTOCK[INDEX,angle] = ang(YAW,PITCH,0)
+    POSSTOCK[INDEX,vector] = vec(FARZ,(FOV/180)*PITCH*LIMSCREEN:x()*RATIO:y(),-(FOV/180)*YAW*LIMSCREEN:y()*RATIO:x())
+    
+
+}
+while(RENDER&&perf(RENDERPERF)&&serverTickFree(SN,SV)){
+    INDEX++
+    INDEX=INDEX%((LIMSCREEN:x())*(LIMSCREEN:y()))
+    
+    #RG = rangerOffset(POS+vec(NEARZ,0,0):rotate(ANG+ANGLESTOCK[INDEX,angle]),POS+vec(FARZ,0,0):rotate(ANG+ANGLESTOCK[INDEX,angle]))
+    
+    RG = rangerOffset(POS,POS+((POSSTOCK[INDEX,vector]:rotate(ANG))))
+    
+    local TX    = (abs(RG:hitNormal():x())+abs(RG:hitNormal():y())+abs(RG:hitNormal():z()))*(5+0.03*RG:entity():mass())
+    local COND1 = changed(RG:hitTexture())
+    local COND2 = 0
+    #local COND2 = changed(RG:hitNormal())
+    #local COND2 = (0.05*(floor(abs(TX*(0.9+0.4*sin(RG:pos():x())))%2)))+
+    #              (0.05*(floor(abs(TX*(0.9+0.4*sin(RG:pos():y())))%2)))+
+    #             (0.05*(floor(abs(TX*(0.9+0.4*sin(RG:pos():z())))%2)))
+    local COND3 = changed(RG:entity())
+    local COND4 = changed(COND2)
+    local YOFS  = floor(INDEX/LIMSCREEN:x())
+    local MIX   = (0.5+0.5*((sin(90*RG:hitNormal():x())+sin(90*RG:hitNormal():y())+sin(90*RG:hitNormal():z()))/3))*(max(0.1,1-(RG:distance()*0.0001)))
+    #[
+    COL = (hsv2rgb(
+    (RG:hitTexture():length()*22.5)%360,
+    min(0.2,(RG:hitNormal():x()+RG:hitNormal():y()+RG:hitNormal():z())),
+    1))
+    *max(0,(MIX-COND2-COND1/3-(COND4/(min(1,1-(RG:distance()*0.3))))-COND3/3))
+    ]#
+    COL = getENVMAPPOINTER(RG:hitNormal())*max(0,(MIX-COND2-COND1/3-(COND4/(min(1,1-(RG:distance()*0.01))))-COND3/3))
+    if (RG:hitSky()){
+    DIGISCREEN[INDEX] = rgb2digi(vec(20,20,128),3)
+    }else{
+    DIGISCREEN[INDEX] = rgb2digi(COL,3)
+    }
+}
