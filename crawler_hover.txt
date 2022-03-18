@@ -1,0 +1,185 @@
+@name Crawler Hover
+@persist Seat:entity Hover:entity Interp Time Interp2 Time2 Debug
+@outputs Code:string
+if(first()){
+
+    #[[
+    This requires the Crawler entity!
+    Where to get the addon itself is unknown for now
+
+    This will create a hovercraft version of the Crawler excluding its ring.
+    Base Component requirements*: 
+    
+    *you can check via running 
+     lua_run_self PrintTable(E2Lib.GetExtensions())
+    
+    >constraintcore
+    >propcore
+    > sound
+    > ranger
+    
+    enjoy!
+    
+    ]]#
+    
+    
+    # General Settings: Startup   
+     runOnChat(1)           # to clean up the hover afterwards. (!hoverKill)
+     runOnTick(1)           # for tick operations
+     runOnKeys(owner(),1)   # for interpolation
+     
+     rangerPersist(1)       # for hover features
+     rangerHitEntities(1)   # ^
+    
+     propSpawnUndo(0)       # not sure if needs to be used at that point, ima keep it in there
+    
+    # Additional Settings (Assignments of ents etc)
+
+     # interpolation times
+     Time  = 0
+     Time2 = 0
+
+     #seat and hover components.
+     Seat = seatSpawn("",entity():pos()+vec(0,-24,41),ang(),1)   
+     Hover = propSpawn("models/crawler/monowheel.mdl",entity():pos()+vec(0,0,50),ang(0,90,0),1)
+     noCollide(Seat,Hover)
+     weld(Seat,Hover)
+     Hover:setSubMaterial(1,"models/shiny")
+
+    # if you like extra shinyness then use these two :^) (will require tf2 textures!)
+     #Hover:setSubMaterial(1,"models/player/shared/ice_player")
+     #Hover:setSubMaterial(4,"models/player/shared/gold_player")
+
+     Hover:setColor(owner():getPlayerColor()+owner():getWeaponColor()/2)
+     # nice blend
+
+     Seat:setAlpha(0) # we dont want the seat to show separately.
+     Seat:propGravity(0) # nor do we want it to change the COM
+     Hover:propSetFriction(90) # unsure if this will do anything for now
+
+     Debug = 0
+     for(I=1,3){
+         if(Debug){
+         holoCreate(I)
+         holoScaleUnits(I,vec(2))
+         holoColor(I,vec(0,255,0))
+         holoDisableShading(I,1)   
+         }
+     }
+     # want to debug the rangers? Set that to 1
+    
+        
+     rangerFilter(array(owner(),Seat,Hover)) # dont selfintersect
+
+     Code = getCode() # if you wish to use my notepad e2.
+}
+
+# HoverKill command. will kill the hover and the chip. 
+# easier than to undo (you still would undo 5 times!)
+if(chatClk(owner())&&owner():lastSaid():lower()=="!hoverkill"){
+     hideChat(1)
+     Seat:propBreak()   
+     Hover:propBreak()
+     selfDestruct()
+}
+
+# Hover Condition: Seat interactions
+# > sadly this is for the owner only.
+
+if(owner():inVehicle()==0){
+    if(changed(owner():keyUse())&&owner():keyUse()&&owner():pos():distance(Hover:pos())<100&&owner():eyeTrace():entity()==Hover){
+        Seat:use()   
+        # since the seat is unreachable.
+    }
+}
+
+# Simple oneliner to reset the interpolation.
+if(keyClk(owner())){Time=0 Time2=0}
+
+# WASD movement mapping. This has interpolation!
+if(owner():inVehicle()&&owner():pos():distance(Hover:pos())<60){
+    if(owner():keyPressed("W")){
+        Time+=0.05
+        Interp = 1-(1/(1+Time))
+        Hover:applyForce(Hover:forward()*150*Interp*Hover:mass()*vec(1,1,0))        
+    }
+    if(owner():keyPressed("A")){
+        Time2+=0.01
+        Interp2 = 1-(1/(1+Time2))
+        Hover:applyTorque(vec(0,0,1000*Interp2)*Hover:inertia())         
+    }
+    if(owner():keyPressed("S")){
+        Time+=0.1
+        Interp = 1-(1/(1+Time))
+        Hover:applyForce(-Hover:forward()*50*Interp*Hover:mass()*vec(1,1,0))        
+    }
+    if(owner():keyPressed("D")){
+        Time2+=0.01
+        Interp2 = 1-(1/(1+Time2))
+        Hover:applyTorque(vec(0,0,-1000*Interp2)*Hover:inertia())
+    }
+}
+
+
+# the upgrighting function. Feel free to replace this , should you find a better method.
+function upright(){
+
+     # We basically sample a dot on each side of the hover, and then get its fractional output.
+     # the closer to the floor, the more force is applied on each side.
+     local Left = 1-rangerOffset(Hover:boxCenterW()-Hover:right()*50,Hover:boxCenterW()-Hover:right()*50-vec(0,0,150)):fraction()
+     local Right= 1-rangerOffset(Hover:boxCenterW()+Hover:right()*50,Hover:boxCenterW()+Hover:right()*50-vec(0,0,150)):fraction()
+
+     Hover:applyOffsetForce(vec(0,0,Left)*Hover:mass()*10,Hover:boxCenterW()-Hover:right()*50)
+     Hover:applyOffsetForce(vec(0,0,Right)*Hover:mass()*10,Hover:boxCenterW()+Hover:right()*50)
+     
+    
+     # Pitch negotiation. Pitch up, apply downward tilt and vise versa.
+     if(Hover:angles():pitch()<5){
+          Hover:applyTorque(vec(0,30000,0))
+     }
+    
+     if(Hover:angles():pitch()>-5){
+          Hover:applyTorque(vec(0,-50000,0))
+     }
+
+     # last but not least we attempt to dampen the hover to avoid resonating wobbles.
+     Hover:applyTorque(-Hover:angVelVector()*Hover:inertia())
+
+}
+
+
+# the hover function. Again, feel free to replace if you found a better solution.
+function hover(){
+    
+    # this ranger is from the center of the hover, downwards. Same principle as from the upright feature.
+    local HowmuchPush = 1-rangerOffset(Hover:boxCenterW(),Hover:boxCenterW()-vec(0,0,100)):fraction()
+
+    Hover:applyForce(vec(0,0,HowmuchPush)*Hover:mass()*50)
+
+}
+
+# The sound design of the engine, if you will. This will update the engine sound!
+function doEngineUpdate(){
+
+     # If the hover has just spawned, initiate the sounds.
+     if(changed(Hover:isValid())&&Hover:isValid()){
+          Hover:soundPlay(1,9999,"acf_engines/i4_special.wav")   
+          Hover:soundPlay(2,9999,"acf_engines/turbine.wav")  
+          soundVolume(1,0.3) 
+     }else{ # if it has been spawned, then simply update the pitch and volume.
+          soundPitch(1,min(215,Hover:vel():length()/40)+33) # 33 is idle pitch.  
+          soundPitch(2,min(100,Hover:vel():length()/10))   
+          soundVolume(2,max(0,min(0.2,((Hover:vel():length()/20)-0.4)))) # fades in after medium speed.     
+     }
+}
+
+if(Debug){ # This will visualize your rangers!
+    holoPos(1,rangerOffset(Hover:boxCenterW()-Hover:right()*50,Hover:boxCenterW()-Hover:right()*50-vec(0,0,150)):pos())
+    holoPos(2,rangerOffset(Hover:boxCenterW()+Hover:right()*50,Hover:boxCenterW()+Hover:right()*50-vec(0,0,150)):pos())
+    holoPos(3,rangerOffset(Hover:boxCenterW(),Hover:boxCenterW()-vec(0,0,100)):pos())
+}
+
+# send all commands to the hover.
+upright()
+hover()
+doEngineUpdate()
