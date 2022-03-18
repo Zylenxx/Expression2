@@ -1,6 +1,6 @@
 @name Crawler Hover
-@persist Seat:entity Hover:entity Interp Time Interp2 Time2 Debug
-@outputs Code:string
+@persist Seat:entity Hover:entity Interp Time Interp2 Time2 Debug DebugP SmoothAR:array Spacebar
+@outputs DebugP #Code:string 
 if(first()){
 
     #[[
@@ -13,13 +13,15 @@ if(first()){
     *you can check via running 
      lua_run_self PrintTable(E2Lib.GetExtensions())
     
-    >constraintcore
-    >propcore
+    > constraintcore
+    > propcore
     > sound
     > ranger
-    
+    ** > acf base sounds 
     enjoy!
-    
+
+
+    ** for engine sounds
     ]]#
     
     
@@ -30,6 +32,7 @@ if(first()){
      
      rangerPersist(1)       # for hover features
      rangerHitEntities(1)   # ^
+     rangerHitWater(1)      # ^
     
      propSpawnUndo(0)       # not sure if needs to be used at that point, ima keep it in there
     
@@ -44,11 +47,11 @@ if(first()){
      Hover = propSpawn("models/crawler/monowheel.mdl",entity():pos()+vec(0,0,50),ang(0,90,0),1)
      noCollide(Seat,Hover)
      weld(Seat,Hover)
-     Hover:setSubMaterial(1,"models/shiny")
+     #Hover:setSubMaterial(1,"models/shiny")
 
     # if you like extra shinyness then use these two :^) (will require tf2 textures!)
-     #Hover:setSubMaterial(1,"models/player/shared/ice_player")
-     #Hover:setSubMaterial(4,"models/player/shared/gold_player")
+     Hover:setSubMaterial(1,"models/player/shared/ice_player")
+     Hover:setSubMaterial(4,"models/player/shared/gold_player")
 
      Hover:setColor(owner():getPlayerColor()+owner():getWeaponColor()/2)
      # nice blend
@@ -71,7 +74,7 @@ if(first()){
         
      rangerFilter(array(owner(),Seat,Hover)) # dont selfintersect
 
-     Code = getCode() # if you wish to use my notepad e2.
+     #Code = getCode() # if you wish to use my notepad e2.
 }
 
 # HoverKill command. will kill the hover and the chip. 
@@ -94,14 +97,15 @@ if(owner():inVehicle()==0){
 }
 
 # Simple oneliner to reset the interpolation.
-if(keyClk(owner())){Time=0 Time2=0}
+if(changed(owner():keyPressed("W"))||changed(owner():keyPressed("S"))){Time=0}
+if(changed(owner():keyPressed("A"))||changed(owner():keyPressed("D"))){Time2=0}
 
 # WASD movement mapping. This has interpolation!
 if(owner():inVehicle()&&owner():pos():distance(Hover:pos())<60){
     if(owner():keyPressed("W")){
-        Time+=0.05
+        Time+=0.0001
         Interp = 1-(1/(1+Time))
-        Hover:applyForce(Hover:forward()*150*Interp*Hover:mass()*vec(1,1,0))        
+        Hover:applyForce(Hover:forward()*3500*Interp*Hover:mass()*vec(1,1,0))        
     }
     if(owner():keyPressed("A")){
         Time2+=0.01
@@ -114,12 +118,23 @@ if(owner():inVehicle()&&owner():pos():distance(Hover:pos())<60){
         Hover:applyForce(-Hover:forward()*50*Interp*Hover:mass()*vec(1,1,0))        
     }
     if(owner():keyPressed("D")){
-        Time2+=0.01
+        Time2+=0.05
         Interp2 = 1-(1/(1+Time2))
         Hover:applyTorque(vec(0,0,-1000*Interp2)*Hover:inertia())
     }
+       if(owner():keyPressed("SPACE")){
+        Spacebar = 1
+       }else{
+        Spacebar = 0 
+       }
 }
 
+# smoothing library.
+function number smooth(Index,Number){
+    
+    SmoothAR[Index,number] = SmoothAR[Index,number]*0.9+Number*0.1
+    return SmoothAR[Index,number]
+}
 
 # the upgrighting function. Feel free to replace this , should you find a better method.
 function upright(){
@@ -143,7 +158,7 @@ function upright(){
      }
 
      # last but not least we attempt to dampen the hover to avoid resonating wobbles.
-     Hover:applyTorque(-Hover:angVelVector()*Hover:inertia())
+     Hover:applyTorque(-Hover:angVelVector()*Hover:inertia()*1.3)
 
 }
 
@@ -152,11 +167,25 @@ function upright(){
 function hover(){
     
     # this ranger is from the center of the hover, downwards. Same principle as from the upright feature.
-    local HowmuchPush = 1-rangerOffset(Hover:boxCenterW(),Hover:boxCenterW()-vec(0,0,100)):fraction()
+    local HowmuchPush = 1-rangerOffset(Hover:boxCenterW(),Hover:boxCenterW()-vec(0,0,40+Spacebar*100)):fraction()
 
     Hover:applyForce(vec(0,0,HowmuchPush)*Hover:mass()*50)
 
 }
+
+# gearing test. this is a formula driven gear pitch simulation
+function number gearing(Speed:number){
+
+    local PITCH = 0
+    local X = 0.2*abs(Speed)
+    local G     = 0.1 + X * 0.02
+
+    PITCH = 1+(1 /(floor(X*G+1))) * (X * G + floor(-X*G))
+    PITCH = PITCH*100
+
+    return PITCH
+}
+
 
 # The sound design of the engine, if you will. This will update the engine sound!
 function doEngineUpdate(){
@@ -164,11 +193,14 @@ function doEngineUpdate(){
      # If the hover has just spawned, initiate the sounds.
      if(changed(Hover:isValid())&&Hover:isValid()){
           Hover:soundPlay(1,9999,"acf_engines/i4_special.wav")   
-          Hover:soundPlay(2,9999,"acf_engines/turbine.wav")  
-          soundVolume(1,0.3) 
+          Hover:soundPlay(3,9999,"acf_engines/b6_petrolmedium.wav")   
+          Hover:soundPlay(2,9999,"acf_engines/turbine_large.wav")  
+          soundVolume(1,0.5) 
+          soundVolume(3,0.3) 
      }else{ # if it has been spawned, then simply update the pitch and volume.
-          soundPitch(1,min(215,Hover:vel():length()/40)+33) # 33 is idle pitch.  
-          soundPitch(2,min(100,Hover:vel():length()/10))   
+          soundPitch(1,min(215,gearing(smooth(1,Hover:vel():length()/40)))+33) # 33 is idle pitch.  
+          soundPitch(3,min(215,1.3*gearing(smooth(1,Hover:vel():length()/40)))+33) # 33 is idle pitch.  
+          soundPitch(2,min(100,smooth(2,Hover:vel():length()/20)))   
           soundVolume(2,max(0,min(0.2,((Hover:vel():length()/20)-0.4)))) # fades in after medium speed.     
      }
 }
@@ -180,6 +212,7 @@ if(Debug){ # This will visualize your rangers!
 }
 
 # send all commands to the hover.
+DebugP = smooth(2,Hover:vel():length()/20)
 upright()
 hover()
 doEngineUpdate()
