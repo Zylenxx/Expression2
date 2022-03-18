@@ -43,15 +43,15 @@ if(first()){
      Time2 = 0
 
      #seat and hover components.
-     Seat = seatSpawn("",entity():pos()+vec(0,-24,41),ang(),1)   
+     Seat = seatSpawn("",entity():pos()+vec(0,-24,41),ang(0,0,15),1)   
      Hover = propSpawn("models/crawler/monowheel.mdl",entity():pos()+vec(0,0,50),ang(0,90,0),1)
      noCollide(Seat,Hover)
      weld(Seat,Hover)
-     #Hover:setSubMaterial(1,"models/shiny")
+     Hover:setSubMaterial(1,"models/shiny")
 
     # if you like extra shinyness then use these two :^) (will require tf2 textures!)
-     Hover:setSubMaterial(1,"models/player/shared/ice_player")
-     Hover:setSubMaterial(4,"models/player/shared/gold_player")
+     #Hover:setSubMaterial(1,"models/player/shared/ice_player")
+     #Hover:setSubMaterial(4,"models/player/shared/gold_player")
 
      Hover:setColor(owner():getPlayerColor()+owner():getWeaponColor()/2)
      # nice blend
@@ -59,7 +59,18 @@ if(first()){
      Seat:setAlpha(0) # we dont want the seat to show separately.
      Seat:propGravity(0) # nor do we want it to change the COM
      Hover:propSetFriction(90) # unsure if this will do anything for now
-
+     lightCreate(1)
+     lightColor(1,owner():getPlayerColor()+owner():getWeaponColor()/2)
+     lightBrightness(1,12)
+     lightDistance(1,50)
+     lightPos(1,Hover:pos()-vec(0,0,10))
+     lightParent(1,Hover)
+     lightCreate(2)
+     lightColor(2,owner():getPlayerColor()+owner():getWeaponColor()/2)
+     lightBrightness(2,3)
+     lightDistance(2,5000)
+     lightPos(2,Hover:pos()-vec(0,0,10))
+     lightParent(2,Hover)
      Debug = 0
      for(I=1,3){
          if(Debug){
@@ -72,7 +83,8 @@ if(first()){
      # want to debug the rangers? Set that to 1
     
         
-     rangerFilter(array(owner(),Seat,Hover)) # dont selfintersect
+     rangerFilter(array(Seat,Hover)) # dont selfintersect
+     rangerFilter(players())         # dont selfintersect w/ players
 
      #Code = getCode() # if you wish to use my notepad e2.
 }
