@@ -1,0 +1,84 @@
+@name sent_CCTVCAMERA
+@inputs Camera:entity
+@persist TraceLeft TraceRight  TURNSPEED DOTRACKTRACED TracedEnt:entity SWITCH TIMER ADJUST:angle
+@outputs TraceLeft TraceRight  TURNSPEED DOTRACKTRACED TracedEnt:entity SWITCH TIMER CMPITCH
+if(first()){
+    
+    rangerPersist(1)
+    rangerFilter(Camera)
+    SWITCH        = 1.00 
+    TURNSPEED     = 0.06 # deg/tick
+    DOTRACKTRACED = 1    # track if camera traces any entity
+    # debug holos
+    #holoCreate(1)
+    #holoCreate(2)
+
+    function ranger tl(){
+        local R = noranger()
+        
+        if(Camera:isValid()){
+            R = rangerOffset(1024,Camera:pos(),Camera:forward():rotate(ang(0,15,0)))    
+        }   
+        
+        return R
+    }
+    function ranger tr(){
+        local R = noranger()
+        
+        if(Camera:isValid()){
+            R = rangerOffset(1024,Camera:pos(),Camera:forward():rotate(ang(0,-15,0)))    
+        }   
+        
+        return R
+    }  
+    function entity entity:tre(){
+        local R = noentity()
+        
+        if(Camera:isValid()){
+            R = rangerOffset(1024,This:pos(),This:forward()):entity()    
+        }   
+        
+        return R
+    }
+
+}
+event tick(){
+    ADJUST = ang(0,SWITCH*TURNSPEED,0)
+    TIMER=max(0,TIMER)
+    if(changed(Camera)&&Camera:isValid()){
+    Camera:setAng(Camera:angles():setPitch(15))
+    
+    }
+    if(TIMER>0){
+     Camera:setAng((TracedEnt:pos()-Camera:pos()):toAngle())   
+    }
+    
+    if(rangerOffset(1024,Camera:pos(),Camera:forward()):entity():isValid()&&DOTRACKTRACED&&rangerOffset(1024,Camera:pos(),Camera:forward()):entity():type()=="player"){
+        TracedEnt = Camera:tre()
+        TIMER=100
+    }else{    
+    TIMER-=1
+    if(TIMER<0){
+    TraceLeft=tl():distance()
+    TraceRight=tr():distance()
+
+     holoPos(1,tl():position())   
+     holoPos(2,tr():position())   
+    
+    if(TraceLeft<50){
+     SWITCH =-1   
+    }
+    if(TraceRight<50){
+     SWITCH = 1   
+    }
+    
+    if(floor(Camera:angles():pitch())>15){
+        Camera:setAng(Camera:angles()+ADJUST-ang(0.1,0,0))
+    }else{
+        Camera:setAng(Camera:angles()+ADJUST+ang(0.1,0,0))
+    }
+    Camera:setAng(Camera:angles()+ADJUST)
+    }
+    }
+    CMPITCH=Camera:angles():pitch()
+}

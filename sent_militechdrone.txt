@@ -1,0 +1,499 @@
+@model models/spacecode/sfchip.mdl
+@name sent_Militechdrone
+@inputs RECEIVE:string
+@persist [Dronebody DroneGroup1 DroneGroup2]:entity  T Target:entity  PatrolTo:vector Reboot SpawnCamera
+@persist MoveSpeed Updaterate Followtime Timertable:array StopSeeking HPN Biases:array LeaveSpaceTo:array
+@persist Setting:string IsViewing Health Seen:array Chips:array Biastable:array SEND:string 
+@outputs SEND:string Code:string
+#include "hpBar"
+if(first()||Reboot){
+    Code=getCode()
+    Reboot=0
+    T=0
+    SEND="none"
+    Health = 2300
+    propDeleteAll()
+    setName("Militech Drone Version 6 Pre-Release")
+    propSpawnUndo(0)
+    rangerPersist(1)
+    runOnDmg(1)
+
+    function entity:hpBarTick2(ENTHP,HP,HPID,Offs){
+            local Scalar = 1
+            local Scalar2 = ENTHP/HP # => 1.00 at 100%, 0.00 at 0%
+            holoScaleUnits(HPID+1,vec(0.4,70*Scalar2,10)*Scalar)
+            holoPos(HPID,This:pos()+Scalar*vec(0,0,40)+vec(0,0,Offs))
+            holoPos(HPID+1,This:pos()+Scalar*vec(0,0,40)+vec(0,0,Offs))
+            holoAng(HPID,ang(0,90,0)+This:angles()*ang(0,1,0))
+            holoAng(HPID+1,ang(0,90,0)+This:angles()*ang(0,1,0))
+    }
+        
+    
+    
+  #  if(findToArray():count()<1){cameraCreate(1) SpawnCamera=1}else{SpawnCamera=0}
+    
+    Updaterate=10
+    Followtime=10
+    MoveSpeed=320
+
+    function getChipOut(Index){
+     local I=Index%Chips:count() 
+        if(Chips[I+1,entity]:isValid()){  
+           entity():createWire(Chips[I+1,entity],"RECEIVE","SEND",50,vec(255),"cable/redlaser")
+        }
+    }
+
+    function processReceive(){
+        
+        local Array    = RECEIVE:explode(",")
+        local T_ID     = entity(Array[1,string]:toNumber())
+        local Method   = Array[2,string]
+        local SetStatus= Array[3,string]
+        local SetFtime = Array[4,string]:toNumber()
+        
+        if(Method:lower()!="none"){
+
+            StopSeeking=1
+            if(Method:lower()=="follow"&&rangerOffset(Dronebody:pos(),T_ID:boxCenterW()):entity()==T_ID){
+                Target          = T_ID
+                Setting         = SetStatus:lower()
+                Followtime      = SetFtime
+            }
+            if(Method:lower()=="hasdied"){
+                holoCreate(9999)
+                holoAlpha(9999,0)
+                holoPos(9999,entity():pos())
+                Setting         = SetStatus:lower()
+                Target          = holoEntity(9999)
+                Followtime      = 1000
+            }   
+        }else{
+                StopSeeking=0   
+        }
+    }
+
+    function entity:addDetails(){
+        local B=This
+        local BP=B:pos()
+        
+        
+          holoCreate(1,BP,vec(),ang(),vec(64,64,96),"")  
+          holoParent(1,Dronebody)
+          holoScaleUnits(1,vec(15,60,30))
+          holoMaterial(1,"phoenix_storms/iron_rails") 
+  
+          holoCreate(2,BP,vec(),ang(0,90,90),vec(64,64,96),"models/mechanics/roboticslarge/a1.mdl")  
+          holoParent(2,Dronebody)
+
+          holoScaleUnits(2,vec(59,40,19))
+          holoMaterial(2,"phoenix_storms/iron_rails")
+        
+          holoCreate(3,BP+vec(18,0,0),vec(0.625),ang(0,45,0):rotateAroundAxis(B:forward(),90),vec(64,64,96),"models/hunter/triangles/1x1x2carved025.mdl")
+          holoCreate(4,BP-vec(18,0,0),vec(0.625),ang(0,-45,0):rotateAroundAxis(B:forward(),90):rotateAroundAxis(B:right(),-90),vec(64,64,96),"models/hunter/triangles/1x1x2carved025.mdl")
+        
+          holoMaterial(3,"phoenix_storms/iron_rails")
+          holoMaterial(4,"phoenix_storms/iron_rails")
+        
+          holoParent(3,DroneGroup1)
+          holoParent(4,DroneGroup1)
+        
+          holoCreate(5,BP+vec(0,28,-2),vec(4,4,8),ang(-90,-90,180),vec(255),"models/alyx_emptool_prop.mdl")
+          holoParent(5,Dronebody)
+        
+          holoCreate(6,BP+vec(12,0,0),vec(0.5),ang(90,0,0),vec(255),"models/props_lab/teleportring.mdl")
+          holoCreate(7,BP+vec(-12,0,0),vec(0.5),ang(90,0,180),vec(255),"models/props_lab/teleportring.mdl")
+          holoCreate(8,BP+vec(17,0,0),vec(0.7),ang(-90,0,0),vec(255),"models/props_lab/teleportring.mdl")
+          holoCreate(9,BP+vec(-17,0,0),vec(0.7),ang(-90,0,180),vec(255),"models/props_lab/teleportring.mdl")
+        
+          holoParent(8,DroneGroup2)
+          holoParent(9,DroneGroup2)       
+          holoParent(6,DroneGroup2)
+          holoParent(7,DroneGroup2)
+        
+          holoCreate(10,BP+vec(25,-11,0),vec(1),ang(0,90,90),vec(255),"models/machinegun/machinegun_40mm_compact.mdl")
+          holoCreate(11,BP+vec(25,-11,7),vec(1),ang(0,90,90),vec(255),"models/machinegun/machinegun_40mm_compact.mdl")
+          holoCreate(12,BP+vec(25,-11,-7),vec(1),ang(0,90,90),vec(255),"models/machinegun/machinegun_40mm_compact.mdl")
+          holoParent(10,DroneGroup1)
+          holoParent(11,DroneGroup1)
+          holoParent(12,DroneGroup1)
+          holoCreate(13,BP-vec(25,11,0),vec(1),-ang(0,-90,90),vec(255),"models/machinegun/machinegun_40mm_compact.mdl")
+          holoCreate(14,BP-vec(25,11,7),vec(1),-ang(0,-90,90),vec(255),"models/machinegun/machinegun_40mm_compact.mdl")
+          holoCreate(15,BP-vec(25,11,-7),vec(1),-ang(0,-90,90),vec(255),"models/machinegun/machinegun_40mm_compact.mdl")
+          holoParent(13,DroneGroup1)
+          holoParent(14,DroneGroup1)
+          holoParent(15,DroneGroup1)
+        
+          holoCreate(16,BP+vec(27,-10,0),vec(1.5,2,3),ang(0,0,-90),vec(64,64,96),"models/sprops/misc/fittings/cubinder_12_to_12.mdl")
+          holoCreate(17,BP+vec(-27,-10,0),vec(1.5,2,3),ang(0,0,-90),vec(64,64,96),"models/sprops/misc/fittings/cubinder_12_to_12.mdl")
+          holoParent(16,DroneGroup1)
+          holoParent(17,DroneGroup1)
+          holoMaterial(16,"phoenix_storms/iron_rails")
+          holoMaterial(17,"phoenix_storms/iron_rails")
+        
+          holoCreate(18,BP+vec(27,-30,0),vec(1.5),ang(0,0,90),vec(64,64,96),"models/sprops/geometry/hring_12.mdl")
+          holoMaterial(18,"phoenix_storms/iron_rails")
+          holoParent(18,DroneGroup1)
+          holoCreate(19,BP+vec(27,-30,7),vec(1.5),ang(0,0,90),vec(64,64,96),"models/sprops/geometry/hring_12.mdl")
+          holoMaterial(19,"phoenix_storms/iron_rails")
+          holoParent(19,DroneGroup1)
+          holoCreate(20,BP+vec(27,-30,-7),vec(1.5),ang(0,0,90),vec(64,64,96),"models/sprops/geometry/hring_12.mdl")
+          holoMaterial(20,"phoenix_storms/iron_rails")
+          holoParent(20,DroneGroup1)
+          holoCreate(21,BP+vec(-27,-30,0),vec(1.5),ang(0,0,90),vec(64,64,96),"models/sprops/geometry/hring_12.mdl")
+          holoMaterial(21,"phoenix_storms/iron_rails")
+          holoParent(21,DroneGroup1)
+          holoCreate(22,BP+vec(-27,-30,7),vec(1.5),ang(0,0,90),vec(64,64,96),"models/sprops/geometry/hring_12.mdl")
+          holoMaterial(22,"phoenix_storms/iron_rails")
+          holoParent(22,DroneGroup1)
+          holoCreate(23,BP+vec(-27,-30,-7),vec(1.5),ang(0,0,90),vec(64,64,96),"models/sprops/geometry/hring_12.mdl")
+          holoMaterial(23,"phoenix_storms/iron_rails")
+          holoParent(23,DroneGroup1)
+        
+          holoCreate(25,BP+vec(30,15,0),vec(1,1,1),ang(90,0,0),vec(64,64,96),"models/sprops/geometry/hdisc_12.mdl")
+          holoScaleUnits(25,vec(22,30,6))
+          holoCreate(26,BP+vec(-30,15,0),vec(1,1,1),ang(-90,0,0),vec(64,64,96),"models/sprops/geometry/hdisc_12.mdl")
+          holoScaleUnits(26,vec(22,30,6))
+          holoParent(25,DroneGroup1)
+          holoParent(26,DroneGroup1)
+          holoMaterial(25,"phoenix_storms/iron_rails")
+          holoMaterial(26,"phoenix_storms/iron_rails")
+          
+    }
+    
+
+    # update all the drone bodygroups. 
+    function entity:updateGroups(){       
+        
+        DroneGroup1:setPos(Dronebody:pos())
+        DroneGroup2:setPos(Dronebody:pos())
+        
+        DroneGroup2:setAng(Dronebody:angles():rotateAroundAxis(Dronebody:forward(),(T*15)%360))
+        
+    }
+
+    # minimalistic switch case, trigger only once per switch , not per tick
+    function cycleSetting(){
+         switch(Setting){
+            case "idle",             Setting = "followpassive" break
+            case "followpassive",    Setting = "patrol" break
+            case "patrol",           Setting = "idle" break
+            case "agressive",        Setting = "patrol" break    
+         }   
+        printColor("<c=0f0> Changed setting to: <c=fff>"+Setting)
+    }
+    #[
+    print("7 - view toggle")
+    # switch for the drone camera. trigger once, not per tick.
+    function toggleDroneView(){
+        if(IsViewing==0){
+            IsViewing=1
+            printColor("<c=aaf>To exit the drone camera, press the up arrow on your keyboard.")   
+        }else{
+            IsViewing=0
+        }
+        cameraToggle(1,IsViewing)
+    }
+
+    print("8 - smooth cam")
+    # smoothout for the camera.
+    function smoothCamera(Pos:vector,Smoothing){
+            local SM = min(1,Smoothing)
+            if(SpawnCamera){
+                    cameraPos(1,cameraPos(1)*(1-SM)+Pos*(SM))
+            }   
+    }
+    ]#
+
+    function entity:doMove(Targetpoint:vector,Speedmult,StopRadius){
+        if(Dronebody:pos():distance(Targetpoint)>StopRadius){
+                Dronebody:applyForce(-Dronebody:vel()*Dronebody:mass()*vec(0.1,0.1,0)+vec(0,MoveSpeed*Speedmult,0):rotate(Dronebody:angles()*ang(0,1,0)))
+        }else{
+                Dronebody:applyForce(-Dronebody:vel()*Dronebody:mass()*vec(0.1,0.1,0))
+        }   
+    }
+
+    # gyro stabilization.
+    function entity:doGyro(){
+        local P = This:angles():pitch()
+        local R = This:angles():roll()
+        
+        This:applyAngForce(ang(-P+!P,0,-R+!R)*45) #gyro
+        This:applyAngForce(-This:angVel()*ang(5,0,5)) # dampening
+    }
+
+    # chat print. function is similar to chat.AddText
+    function doIntroduction(){
+         printColor("<c=44c>Welcome to the Militech Drone system.")
+         printColor("<c=aaf>For Starters, use k to switch behaviors, and uparrow to toggle your camera.")
+         printColor("<c=aaf>All credits to: Searah")
+         printColor("<c=afa>Enjoy!")        
+    }
+
+
+    # hover mechanism.
+    function entity:doHover(){
+        local Rng = rangerOffset(Dronebody:pos(),Dronebody:pos()-vec(0,0,400))
+        local HG  = Rng:hit()
+        local D   = 200-min(200,Rng:distance())
+        local F   = 24
+        
+        if(HG){
+                This:applyForce(vec(0,0,D*F)-This:vel()*vec(0,0,0.7*This:mass()))   
+        }
+    }
+
+    function entity:aimAt(Targetpos:vector){
+            local Haugh=heading(This:pos(),ang(180,180,0),Targetpos)+ang(0,-90,0)
+            local ADif =toLocalAng(This:pos(),This:angles(),This:pos(),Haugh)
+            local Yaw = -ADif:yaw()
+            if(rangerOffset(This:pos(),Targetpos):hitWorld()==0){
+                    This:applyAngForce(ang(0,Yaw*This:mass(),0)-This:angVel()*ang(0,This:mass()*0.7,0))
+            }
+            DroneGroup1:setAng(Dronebody:angles():rotateAroundAxis(Dronebody:forward(),ADif:pitch()))
+    }
+
+    function vector newPatrolPoint(){
+
+            # this will assign a new patrol point to the drone. Margins are included and can be switched in the locals below.
+            # itll require this margin to avoid being stuck on the wall.
+            local MarginHit     = 200   # margin when hitting anything.
+            local MarginGeneral = 100   # margin when the trace DOESNT hit anything.
+            local Drone = Dronebody
+            local Pos   = Drone:pos()
+            local Direction = ang(0,random(0,360),0) 
+            local Vec = vec(500,0,0):rotate(Direction)
+            local OutputVector = vec()
+            local Trace = rangerOffset(Pos,Pos+Vec)
+            if(Trace:hit()){
+                 OutputVector = Trace:position()-vec(MarginHit,0,0):rotate(Direction)
+            }else{
+                 OutputVector = vec()
+                 local Point = Trace:position()  
+                 local PointArray = array()
+                 for(I=1,4){
+                    PointArray[I,vector]=rangerOffset(Point,Point+vec(MarginGeneral,0,0):rotate(ang(0,90*I,0))):pos()        
+                    OutputVector=OutputVector+PointArray[I,vector]*0.25
+                 }                
+                 
+            }
+        
+        return OutputVector
+    }
+    
+    
+
+    function updateKillsList(){
+       foreach(ID,Ply:entity=players()){
+          Biastable[ID,number]=2^(Ply:frags())
+       }            
+    }
+
+ 
+ if(propCanCreate()){
+
+       Dronebody=propSpawn("models/hunter/blocks/cube1x1x1.mdl",entity():pos()+vec(0,0,60),ang(),1)
+       HPN = newHPBar(Dronebody)
+       holoColor(HPN,vec(0,64,128))
+       holoColor(HPN+1,vec(0,128,256))
+       Dronebody:trackDamage()
+       Dronebody:setAlpha(1)
+       Dronebody:soundPlay(1,9999,"ambient/electrical/amb_abstract_energy_lp_01.wav")
+       soundPitch(1,80)
+       rangerFilter(Dronebody)
+       DroneGroup1=holoCreate(60,Dronebody:pos(),vec(0.1),ang(),vec(255),"")
+       DroneGroup2=holoCreate(61,Dronebody:pos(),vec(0.1),ang(),vec(255),"")
+    
+            Dronebody:addDetails()
+
+    
+    }else{
+        error("Cannot spawn base model.")   
+    }
+    
+
+    Setting="patrol"
+    PatrolTo=newPatrolPoint()
+
+    timer("update",1000)
+}
+if(first()){
+
+ #doIntroduction()   
+}
+event keyPressed(Ply:entity, K:string, Dwn:number, MN:string){
+   if(Ply==owner()&&Dwn){ 
+    if(K=="k"){
+
+        cycleSetting()
+    }
+   }
+}
+
+if(dmgClk()&&perf(20)&&lastDamageVictim()==Dronebody){
+    Setting    = "agressive"
+    Health     = max(0,Health-lastDamage():getDamage())
+    Target     = lastDamage():getAttacker()
+    Followtime = 1500
+}
+
+    if(clk("newpatrol")){
+                # hint("nprtrl",1)
+                PatrolTo=newPatrolPoint()
+    }
+    if(clk("update")){
+        if(Setting=="patrol"){ 
+                    Target=noentity()
+                    StopSeeking=0
+                    SEND="0,NONE,NONE,0"
+                    soundStop(6,2)
+                    timer("newpatrol",500)
+                    Timertable[1,number]=T
+                    Dronebody:soundPlay(2,3,"ambient/misc/equipment_stress"+min(3,max(1,floor(random(3)+1)))+".wav",1)
+                    soundPitch(2,random(33,50))
+                    soundVolume(2,0.4)
+        }
+        if(Setting=="followpassive"){    
+                        updateKillsList()
+                        Biases = array()
+                        foreach(P,Ply:entity=players()){
+                         if(Ply:pos():distance(Dronebody:pos())<300){
+                           Seen[P,entity]=Ply
+                           Biases[P,number]=min(16,Biastable[P,number])/16
+                         }else{
+                          Biases[P,number]=-1
+                          Seen[P,entity]=noentity()   
+                         }      
+                        }
+                        if(Biases[Biases:maxIndex(),number]>0.85){Target=players()[Biases:maxIndex(),entity]}
+                    if(Target:isValid()){
+                        Dronebody:soundPlay(6,1,"acf_extra/airfx/hominglocksequence1.wav")
+                        Timertable[4,number]=Followtime*33
+                    }else{
+                        soundStop(6,2)
+                        timer("newpatrol",450)
+                        holoPos(1000,PatrolTo)
+                        Timertable[1,number]=T
+                        Dronebody:soundPlay(2,3,"ambient/misc/equipment_stress"+min(3,max(1,floor(random(3)+1)))+".wav",1)
+                        soundPitch(2,random(33,50))
+                        soundVolume(2,0.4)
+                    }
+        
+        
+        
+        }
+        if(Setting=="patrol"&&random(0,10)<5){
+                    Setting="followpassive"
+        }
+        if(Setting=="followpassive"&&random(0,10)<5){
+                    Setting="patrol"
+        }
+                # hint("updt",1)
+                timer("update",400*Updaterate) 
+    } 
+event tick(){                                                                              # behavior scripting
+        Dronebody:hpBarTick2(Health,2300,HPN,0)
+        if(findCanQuery()){
+            findByClass("gmod_wire_expression2")
+            findClipToPlayerProps(owner())
+            Chips=findToArray()
+            if(!StopSeeking){
+                getChipOut(T)
+            }
+            if(Chips[1,entity]:type()!=entity():type()&&Chips[1,entity]:isValid()){
+             Reboot=1  
+             # hint("ERROR FIN LN 373: FIND IS CORRUPTED",0.5) 
+            }
+        }
+        
+        if(T==20){Dronebody:propFreeze(0)}
+        if(changed(RECEIVE)&&Chips:count()>0){
+             processReceive()   
+        }
+        
+        
+       # smoothCamera(Dronebody:pos()-vec(0,75,-75):rotate(Dronebody:angles()*ang(0,1,0)),0.1)
+        if(SpawnCamera){cameraAng(1,heading(cameraPos(1),ang(180,180,0),Dronebody:pos()))}
+        if(changed(Setting)&&Setting=="agressive"){                                                                         # sound initiation for agressive alert
+            Dronebody:soundPlay(5,1,"ambient/levels/citadel/zapper_warmup1.wav",1) 
+            Dronebody:soundPlay(6,10000,"ambient/levels/labs/teleport_alarm_loop1.wav") 
+            Dronebody:soundPlay(7,1,"plats/door_round_blue_lock_01.wav") 
+            soundPitch(6,60)
+        }
+        if(changed(Setting=="agressive")&&Setting!="agressive"){Dronebody:soundPlay(7,1,"plats/door_round_blue_close_01.wav")}
+        
+        if(Dronebody:isValid()){
+            if(changed(Setting)){
+                switch(Setting){
+                 case "idle", holoColor(HPN,vec(32,32,32)) holoColor(HPN+1,vec(128,128,128)) break   
+                 case "agressive", holoColor(HPN,vec(32,0,0)) holoColor(HPN+1,vec(255,0,0)) break   
+                 case "patrol", holoColor(HPN,vec(0,32,64)) holoColor(HPN+1,vec(0,64,128)) break   
+                 case "followpassive", holoColor(HPN,vec(16,48,96)) holoColor(HPN+1,vec(16,96,196)) break      
+                }
+            }                                                                                            # behavior main start
+             Dronebody:updateGroups()
+             soundPitch(1,50+Dronebody:vel():length())
+             if(Health>0){
+                  Dronebody:doGyro()
+                  Dronebody:doHover() 
+    
+                  if(Setting=="agressive"){                                                                                 # agressive
+                            Followtime=max(0,Followtime-0.5)
+                            if(changed(floor(curtime()*5))){
+                            SEND = Target:id()+",FOLLOW,AGRESSIVE,500"
+                            }
+                            Dronebody:aimAt(Target:boxCenterW()) 
+                            Dronebody:doMove(Target:boxCenterW(),2,250)
+                            if(rangerOffset(Dronebody:pos(),Target:boxCenterW()):hitWorld()){
+                               Timertable[2,number]=Timertable[2,number]+1 
+                            } else{
+                               Timertable[2,number]=0   
+                            }
+                            
+                            if(Timertable[2,number]>400||Followtime==0){
+                             cycleSetting()  
+                        } 
+                            
+                
+                  }
+                
+                  if(Setting=="patrol"){                                                                                    # patrol
+                       Dronebody:aimAt(PatrolTo:setZ(Dronebody:pos():z()-30))
+                       Dronebody:doMove(PatrolTo,0.625,100)
+                 }
+            
+                if(Setting=="followpassive"){                                                                               # Passive Following
+                    if(Target:isValid()&&Timertable[4,number]>0){
+                        Dronebody:aimAt(Target:boxCenterW())
+                        Dronebody:doMove(Target:boxCenterW(),Target:vel():length()/100,100)
+                        Timertable[4,number]=Timertable[4,number]-1
+                    }else{
+                       Dronebody:aimAt(PatrolTo:setZ(Dronebody:pos():z()-30))
+                       Dronebody:doMove(PatrolTo,0.625,100)
+                    }                   
+                } 
+                if(Setting=="idle"){
+                        Dronebody:aimAt(Dronebody:pos()+vec(0,50,0):rotate(Dronebody:angles()))
+                        Dronebody:doMove(Dronebody:pos(),0,100)   
+                }
+            }  
+            if(Health<1){
+             if(changed(Health)){
+              SEND = entity():id()+",HASDIED,AGRESSIVE,1000"   
+             }
+             soundStop(1)
+             soundStop(2)
+             soundStop(3)
+             soundStop(5)
+             soundStop(6)
+             Timertable[3,number]=Timertable[3,number]+1
+             if(Timertable[3,number]>500){   
+                Reboot=1
+             }   
+            }
+        }else{
+        error("
+    Error at sent_Militechdrone:75 - entity Dronebody no longer valid")    
+        }
+            T+=1
+                
+}
