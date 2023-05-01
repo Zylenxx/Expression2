@@ -15,8 +15,8 @@ event tick(){
  local GetLevel = (owner():maxHealth()-100)/50 # adjust to formula when changed
  # this is to override a pac.
   # scale projectile damage based on the health.
-  pacSetKeyValue(owner(),"b70c6dfbd46e17fe923b906da76062796a92994b64a3442babfae1b8119e6b3f","Damage",floor(owner():maxHealth()/5)) # ~5 hits to kill someone of my hp.
-  pacSetKeyValue(owner(),"1c0499b3d121c2e89398c61e9d423f277728392fc42c2fd1f2e2ca8a69adb18f","Text","[Lv."+GetLevel+"]  Zylenxx") # ~5 hits to kill someone of my hp.
+  pacSetKeyValue(owner(),"b70c6dfbd46e17fe923b906da76062796a92994b64a3442babfae1b8119e6b3f","Damage",floor(owner():maxHealth()/20)) # ~20 hits to kill someone of my hp.
+  pacSetKeyValue(owner(),"1c0499b3d121c2e89398c61e9d423f277728392fc42c2fd1f2e2ca8a69adb18f","Text","[Lv."+GetLevel+"]  Zylenxx")
  # spell cooldowns. one spell does nothing.
  Cooldowns[1,number]=max(0,Cooldowns[1,number]-1)
  Cooldowns[2,number]=max(0,Cooldowns[2,number]-1)
