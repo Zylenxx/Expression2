@@ -1,0 +1,98 @@
+@name MMORPG E2
+@model models/spacecode/sfchip.mdl
+@persist Heal Cooldowns:array MAXHP SpellColor:vector NPCID
+@persist Flyboost
+if(first()){
+    # BY:ZYLENXX
+    Cooldowns=array(0,0)
+
+    MAXHP = 100
+    
+    SpellColor = vec(0,1,0.6) # color range 0-1 per channel, thisll color the spell objects
+    timer("nocollide",1000)
+    }
+event tick(){
+ local GetLevel = (owner():maxHealth()-100)/50 # adjust to formula when changed
+ # this is to override a pac.
+  # scale projectile damage based on the health.
+  pacSetKeyValue(owner(),"b70c6dfbd46e17fe923b906da76062796a92994b64a3442babfae1b8119e6b3f","Damage",floor(owner():maxHealth()/5)) # ~5 hits to kill someone of my hp.
+  pacSetKeyValue(owner(),"1c0499b3d121c2e89398c61e9d423f277728392fc42c2fd1f2e2ca8a69adb18f","Text","[Lv."+GetLevel+"]  Zylenxx") # ~5 hits to kill someone of my hp.
+ # spell cooldowns. one spell does nothing.
+ Cooldowns[1,number]=max(0,Cooldowns[1,number]-1)
+ Cooldowns[2,number]=max(0,Cooldowns[2,number]-1)
+
+ if(changed(Cooldowns[1,number])&&Cooldowns[1,number]==0){hint("Healing ready.",1)}
+ if(changed(Cooldowns[2,number])&&Cooldowns[2,number]==0){hint("Spell ready.",1)}
+ rangerHitEntities(0)
+ holoPos(1,owner():pos())
+ holoPos(2,owner():pos()+vec(0,0,40))
+ holoAng(2,ang(0,curtime()*20,0))
+ holoAng(1,rangerOffset(owner():pos()+vec(0,0,10),owner():pos()-vec(0,0,10)):hitNormal():toAngle()+ang(90,0,0))
+
+ if(Flyboost){
+   local Power = owner():health()/4
+   owner():plyApplyForce((1-owner():isOnGround())*vec(Power*owner():keyForward()-Power*owner():keyBack(),Power*owner():keyLeft()-Power*owner():keyRight(),0):rotate(owner():eyeAngles()))
+ }
+
+}
+
+
+# spell that does something: shift+b
+event keyPressed(E:entity, S:string, N:number, TP:string){
+ if(E==owner()&&N){
+    if(S=="b"&&E:keyPressed("lshift")&&Cooldowns[1,number]==0){
+        timer("starthealing",0)
+        Cooldowns[1,number]=50*33
+        owner():soundPlay(1,2,"buttons/portal_button_up_01.wav")
+        owner():soundPlay(2,999,"vfx/tbeam_pos_lp_01.wav")
+        soundVolume(2,1)
+        timer("stophealing",1000*10)
+    }
+    if(S=="n"&&E:keyPressed("lshift")&&Cooldowns[2,number]==0){
+        timer("spell",0)
+        Cooldowns[2,number]=20*33
+        owner():soundPlay(3,2,"vfx/fizzler_shutdown_01.wav")
+        owner():soundPlay(4,999,"vfx/fizzler_lp_01.wav")
+        soundVolume(4,1)
+        timer("spellexpire",1000*10)
+    }
+ }   
+}
+
+
+if(clk("nocollide")||(changed(owner():isAlive())&&owner():isAlive())){
+ noCollideAll(owner(),1) 
+ timer("nocollide",1000)  
+}
+if(clk("starthealing")){
+   timer("heal",333)
+   holoCreate(2)
+   holoModel(2,"models/props_bts/glados_disc_01.mdl")
+   holoAlpha(2,53)
+   holoMaterial(2,"engine/singlecolor")
+   holoScale(2,vec(0.2,0.2,1.7))
+   holoColor(2,SpellColor*255)
+    Heal=1
+}
+if(clk("heal")&&Heal){
+    local N = owner():maxHealth()*0.01
+    owner():plySetArmor(min(owner():maxHealth(),owner():armor()+N*1.3))
+   
+    #owner():plySetHealth(min(MAXHP,owner():health()+110))
+    owner():plySetHealth(min(owner():maxHealth(),owner():health()+N))
+# only use this if you can modify via starfall
+# owner():plySetHealth(min(owner():maxHealth(),owner():health()+50))
+    timer("heal",333)
+}
+if(clk("stophealing")){
+ Heal=0
+ soundVolume(2,0,1)
+  holoDelete(2)   
+}
+if(clk("spell")){
+    Flyboost = 1
+}
+if(clk("spellexpire")){
+ Flyboost = 0
+ soundVolume(4,0,1)   
+}
