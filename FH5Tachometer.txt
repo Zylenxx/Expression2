@@ -85,10 +85,10 @@ event tick(){
     EGP:egpText(99,toString(G),vec2(128,256))
 
     EGP:egpPoly(101,array(
-    vec2(128+256,256)-Transform*vec2(240,0):rotate(-105+min(270,SPD)),
-    vec2(128+256,256)-Transform*vec2(240,0):rotate(-107+min(270,SPD)),
-    vec2(128+256,256)-Transform*vec2(200,0):rotate(-107+min(270,SPD)),
-    vec2(128+256,256)-Transform*vec2(200,0):rotate(-105+min(270,SPD))
+    vec2(128+256,256)-Transform*vec2(240,0):rotate(-105-min(270,SPD)),
+    vec2(128+256,256)-Transform*vec2(240,0):rotate(-107-min(270,SPD)),
+    vec2(128+256,256)-Transform*vec2(200,0):rotate(-107-min(270,SPD)),
+    vec2(128+256,256)-Transform*vec2(200,0):rotate(-105-min(270,SPD))
     ))
  }      
 
