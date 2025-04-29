@@ -1,0 +1,100 @@
+@name UI_FH5_Tachometer
+@inputs [RPM1 RPM2]:number
+@inputs [CHG1 SPD G]:number
+@inputs Charge:number
+@inputs EGP:wirelink
+@persist Transform:vector2 LArr1:array
+@persist LArr2:array [LArr1M LArr2M]:array
+
+function array:addVec2(V:vector2){
+    local ARRED=array()
+    foreach(N,V2:vector2=This){
+     ARRED[N,vector2]=This[N,vector2]+V   
+    }
+    return ARRED
+}
+function arcfill(X,Y,R,W,P){
+ return array(
+    vec2(X,Y)+Transform*vec2(R+W/2,0):rotate(105+min(270,P)),
+    vec2(X,Y)+Transform*vec2(R+W/2,0):rotate(115+min(270,P)),
+    vec2(X,Y)+Transform*vec2(R-W/2,0):rotate(115+min(270,P)),
+    vec2(X,Y)+Transform*vec2(R-W/2,0):rotate(105+min(270,P))
+    )    
+}
+
+
+if (first()){
+    entity():createWire(entity():isWeldedTo(),"EGP","wirelink")
+    EGP:egpClear()    
+    Transform=vec2(0.5,1)
+    for(I=0,64){
+        LArr1[I,vector2]=vec2(128,256)+Transform*vec2(240,0):rotate((I+24)/64*270)
+        LArr2[I,vector2]=vec2(128,256)+Transform*vec2(200,0):rotate((I+24)/64*270)
+        LArr1M[I,vector2]=vec2(128,256)-Transform*vec2(240,0):rotate(-(I+24)/64*270)
+        LArr2M[I,vector2]=vec2(128,256)-Transform*vec2(200,0):rotate(-(I+24)/64*270)  
+    }
+}
+
+event tick(){
+    Charge=min(100,Charge)
+ if(egpCanSendUmsg()){
+    EGP:egpLineStrip(1,LArr1)
+    EGP:egpLineStrip(3,LArr2)
+    EGP:egpLineStrip(4,LArr1M:addVec2(vec2(256,0)))
+    EGP:egpLineStrip(5,LArr2M:addVec2(vec2(256,0)))
+    EGP:egpLine(97,vec2(128+256,256)-Transform*vec2(240,0):rotate(-12),vec2(128+256,256)-Transform*vec2(200,0):rotate(-12))
+    EGP:egpText(2,toString(SPD),vec2(128+256,256))
+    EGP:egpFont(2,"Tahoma",64)
+    EGP:egpAlign(2,1,1)
+    
+    for(I=6,16){
+     EGP:egpText(I,toString(((I-6))),vec2(128,256)-Transform*vec2(180,0):rotate((I+4.5)/10*270))
+     EGP:egpText(I+12,toString((I-6)*20),vec2(128+256,256)+vec2(0.9,1)*Transform*vec2(180,0):rotate(-(I+4.5)/10*270))   
+     EGP:egpAlign(I,1,1)
+     EGP:egpAlign(I+12,1,1)
+    }
+    
+    EGP:egpText(17,"Kph",vec2(128+256,300))
+    EGP:egpFont(17,"Tahoma",25)
+    EGP:egpAlign(17,1,0)
+    EGP:egpPoly(100,array(
+    vec2(128,256)+Transform*vec2(240,0):rotate(105+min(270,CHG1/50)),
+    vec2(128,256)+Transform*vec2(240,0):rotate(107+min(270,CHG1/50)),
+    vec2(128,256)+Transform*vec2(200,0):rotate(107+min(270,CHG1/50)),
+    vec2(128,256)+Transform*vec2(200,0):rotate(105+min(270,CHG1/50))
+    ))
+    for(I=28,38){
+        local N = 1
+        EGP:egpPoly(31+I-28,arcfill(128,256,220,40,270/40*I))
+        EGP:egpColor(31+I-28,vec(128,0,0))
+    }
+    EGP:egpText(99,toString(G),vec2(128,256))
+    EGP:egpFont(99,"Tahoma",64)
+    EGP:egpAlign(99,1,1)
+    EGP:egpText(98,"Gear",vec2(128,300))
+    EGP:egpFont(98,"Tahoma",25)
+    EGP:egpAlign(98,1,0)
+    EGP:egpPoly(101,array(
+    vec2(128+256,256)-Transform*vec2(240,0):rotate(-105+min(270,SPD)),
+    vec2(128+256,256)-Transform*vec2(240,0):rotate(-107+min(270,SPD)),
+    vec2(128+256,256)-Transform*vec2(200,0):rotate(-107+min(270,SPD)),
+    vec2(128+256,256)-Transform*vec2(200,0):rotate(-105+min(270,SPD))
+    ))
+ }      
+
+    EGP:egpPolyOutline(102,array(
+    Transform*vec2(256,512-64),
+    Transform*vec2(256+512,512-64),
+    Transform*vec2(256+512,512-64-32),
+    Transform*vec2(256,512-64-32)
+    ))
+    EGP:egpPoly(103,array(
+    Transform*vec2(256,512-64),
+    Transform*vec2(256+512*Charge/100,512-64),
+    Transform*vec2(256+512*Charge/100,512-64-32),
+    Transform*vec2(256,512-64-32)
+    ))
+    EGP:egpColor(103,vec(128,0,0))
+    EGP:egpText(104,"Charge:"+toString(Charge)+"%",Transform*vec2(512,512-80))
+    EGP:egpAlign(104,1,1)
+}
