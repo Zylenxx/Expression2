@@ -1,4 +1,4 @@
-@name RT2
+@name raytracer 2
 @model models/props_lab/harddrive02.mdl
 @inputs  DS:wirelink Ply:entity ADD REM
 @outputs PERFLIMIT X Y PTR DBG:vector READ CPUTIME UIX UIY ADDCPUBIAS
@@ -11,7 +11,7 @@ H     = 1048573
 N     = 1048574
 CLK   = 1048575
 COL   = 1048569
-ZOOM  = 1000
+ZOOM  = 800
 SAMPLES = 8
 SAMPLEHEIGHT = 800
 PERFLIMIT = 1
@@ -80,9 +80,9 @@ event tick(){
                 RX,
                 RY
                 )
-            local ALBEDO = 0.5+0.5*R:hitNormal():dot(sunDirection())
+            local ALBEDO = min(1,1+0.5*R:hitNormal():dot(sunDirection()))
             local CL     = cmap(R:entity())
-            local AOf    = max(vec(1),2*(vec(1)-getAO(R:pos()+R:hitNormal()*0.001,AOSZ))) #scope branch 5
+            local AOf    = min(vec(1),2*(vec(1)-getAO(R:pos()+R:hitNormal()*0.001,AOSZ))) #scope branch 5
             local SH     = 1-0.5*rangerOffset(R:pos(),R:pos()-((randvec(vec(-0.01),vec(0.01)))+sunDirection())*9999):hit()
 #[This is everything]# Sampled      = (Sampled*((SAMPLES-1)/SAMPLES)) + ((1/SAMPLES)*(ALBEDO*AOf)*CL*SH)
 #[This is just AO]# #  Sampled=Sampled*((SAMPLES-1)/SAMPLES)+(1/SAMPLES)*(1-AOf)
