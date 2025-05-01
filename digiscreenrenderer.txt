@@ -1,4 +1,4 @@
-@name Digital Screen Renderer
+@name Digital Screen Renderer (deprecated)
 #@model models/hunter/blocks/cube6x6x05.mdl
 @inputs DIGISCREEN:wirelink
 @persist INDEX ANGLESTOCK:array POSSTOCK:array DIGISCREEN:wirelink LIMSCREEN:vector2 
