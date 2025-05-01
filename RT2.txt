@@ -1,0 +1,95 @@
+@name RT2
+@model models/props_lab/harddrive02.mdl
+@inputs  DS:wirelink Ply:entity ADD REM
+@outputs PERFLIMIT X Y PTR DBG:vector READ CPUTIME UIX UIY ADDCPUBIAS
+@persist ZOOM P:vector A:angle COL W H N CLK PTR X Y READ Ply:entity
+@persist UIX UIY  R:ranger Sampled:vector DBG:vector AOSZ
+@persist PERFLIMIT SAMPLES SAMPLEHEIGHT ADDCPUBIAS
+if(first()){
+W     = 1048572
+H     = 1048573
+N     = 1048574
+CLK   = 1048575
+COL   = 1048569
+ZOOM  = 1000
+SAMPLES = 8
+SAMPLEHEIGHT = 800
+PERFLIMIT = 1
+AOSZ  = 100
+rangerPersist(1)
+rangerFilter(Ply)
+DS[W]=256*3/4
+DS[H]=256*4/4
+DS[N]=0
+DS[COL]=3
+DS[CLK]=1
+}
+function cmap(E:entity){
+ local C = vec(0.5)   
+  if(E:getClass()=="player"){C=vec(0,1,0)} 
+  if(E:getClass():sub(1,5)=="wire_"){C=vec(0.2,0.5,1)}
+  if(E:getClass()=="prop_physics"){C=vec(1,0,0)}
+ return C   
+}
+
+function getAO(P09852:vector,R18518){
+    local AOContainer=0
+    local CAO = vec(0)
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+    CAO = vec(AOContainer/8)
+    return CAO 
+
+}
+
+setName("Raytracing: "+toString(DS[H])+"x"+toString(DS[W])+"\n@"+toString(SAMPLES)+" Samples,"+toString(8)+" AO samples")
+#scope branch 1
+event input(InputName:string) {
+if(changed(ADD)){ADDCPUBIAS+=100}
+if(changed(REM)){ADDCPUBIAS-=100}
+}
+event tick(){
+    CPUTIME = cpuUsage()*1000000
+    PERFLIMIT=PERFLIMIT+((cpuUsage()*1000000)<(5000+ADDCPUBIAS))-((cpuUsage()*1000000)>(6100+ADDCPUBIAS))
+    for(_=1,PERFLIMIT/SAMPLES){ # scope branch 2
+        
+        if(PTR==1){
+            P=Ply:pos()
+            A=Ply:angles()
+        }
+        
+        X=PTR%DS[H]    
+        Y=floor(PTR/DS[W])%DS[H]
+        UIX=(X-(DS[W]/2))/DS[W]
+        UIY=(Y-(DS[H]/2))/DS[H]
+        local RNDX = 0
+        local RNDY = 0
+        for(N=1,SAMPLES){ #scope branch 3
+            if(SAMPLES>1){ #scope branch 4
+            RNDX = N>1*ZOOM/DS[W]*((randint(64)-32)/64)
+            RNDY = N>1*ZOOM/DS[H]*((randint(64)-32)/64)
+            }                
+            local RX=P+1/16*vec(0,-UIX*ZOOM+RNDX,-UIY*ZOOM+RNDY):rotate(A*ang(1,1,1))
+            local RY=P+vec(SAMPLEHEIGHT,-UIX*ZOOM+RNDX,-UIY*ZOOM+RNDY):rotate(A*ang(1,1,1))
+            R=rangerOffset(
+                RX,
+                RY
+                )
+            local ALBEDO = 0.5+0.5*R:hitNormal():dot(sunDirection())
+            local CL     = cmap(R:entity())
+            local AOf    = max(vec(1),2*(vec(1)-getAO(R:pos()+R:hitNormal()*0.001,AOSZ))) #scope branch 5
+            local SH     = 1-0.5*rangerOffset(R:pos(),R:pos()-((randvec(vec(-0.01),vec(0.01)))+sunDirection())*9999):hit()
+#[This is everything]# Sampled      = (Sampled*((SAMPLES-1)/SAMPLES)) + ((1/SAMPLES)*(ALBEDO*AOf)*CL*SH)
+#[This is just AO]# #  Sampled=Sampled*((SAMPLES-1)/SAMPLES)+(1/SAMPLES)*(1-AOf)
+        }
+       # DS[DS[W]/2+(DS[W]*DS[H])/2]=rgb2digi(255,0,0,DS[COL])
+        DS[PTR]=rgb2digi(255*Sampled,DS[COL])
+        PTR+=1
+        PTR=PTR%(DS[W]*DS[H])   
+    }
+}
