@@ -1,10 +1,10 @@
 @name raytracer 2
 @model models/props/cs_office/computer_caseb_p1.mdl
 @inputs  DS:wirelink Ply:entity ADD REM E2RESET SETSZ
-@outputs PERFLIMIT X Y PTR DBG READ CPUTIME UIX UIY ADDCPUBIAS CPULIM
+@outputs PERFLIMIT X Y PTR DBG:string READ CPUTIME UIX UIY ADDCPUBIAS CPULIM PIXELRATE
 @persist ZOOM P:vector A:angle COL W H N CLK PTR X Y READ Ply:entity
-@persist UIX UIY  R:ranger Sampled:vector DBG AOSZ
-@persist PERFLIMIT SAMPLES SAMPLEHEIGHT ADDCPUBIAS CPULIM
+@persist UIX UIY  R:ranger Sampled:vector DBG:string AOSZ REFLMAX
+@persist PERFLIMIT SAMPLES SAMPLEHEIGHT ADDCPUBIAS CPULIM PIXELRATE CURPX PREVPX
 if(first()){
     holoCreate(1)
     holoPos(1,entity():pos()+vec(12.5,1.95,13.40):rotate(entity():angles()))
@@ -21,11 +21,12 @@ if(first()){
     CLK         = 1048575 # clock (can be pulled high)
     COL         = 1048569 # index for color mode
     ZOOM        =    2000 # FOV (higher => higher FOV, not in degrees!)
-    SAMPLES     =      32 # samples per pixel
+    SAMPLES     =      16 # samples per pixel
     SAMPLEHEIGHT=    2400 # length of ray before stopping
     PERFLIMIT   =       1 # preferably do not change
-    AOSZ        =     100 # length of ambient occlusion in HU
+    AOSZ        =     200 # length of ambient occlusion in HU
     CPULIM      =    3000 # default cpu limit state (adjustable with input ADD and REM at 100us intervals)
+    REFLMAX     =       1 # maximum reflections on materials flagged either glass or metal (within shader)
     PTR         =       0
     rangerPersist(1)
     rangerFilter(Ply)     # filters the entity set as the origin to avoid selfintersection
@@ -35,34 +36,80 @@ if(first()){
     DS[N]=0
     DS[COL]=3
     DS[CLK]=1
-}
+    
 
-# colormap, will get expanded upon later
-function cmap(E:entity){
- local C = vec(0.5)   
-  if(E:getClass()=="player"){C=vec(0,1,0)} 
-  if(E:getClass():sub(1,10)=="gmod_wire_"){C=vec(0.2,0.5,1)}
-  if(E:getClass()=="prop_physics"){C=vec(1,0,0)}
-  if(E:getClass()=="prop_ragdoll"){C=vec(0.7,0.7,1)}
-  if(E:getClass()=="mining_rock"){C=vec(1,0.7,0.7)}
-  if(E:getClass():sub(1,4)=="npc_"){C=vec(0,1,0)}
- return C   
-}
-
-# crude AO. requires multisampling to look good
-function getAO(P09852:vector,R18518){
-    local AOContainer=0
-    local CAO = vec(0)
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()    
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-        AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
-    CAO = vec(AOContainer/8)
-    return CAO 
+    function vector vector:doReflect(Hitnormal:vector){   
+        local VN = Hitnormal:normalized()
+        local RFV = vec()
+        local ANG = 180
+        local C = cos(ANG/2)
+        local S = sin(ANG/2)
+        local QConstr = quat(C,S*VN:x(),S*VN:y(),S*VN:z())
+        RFV = vec(QConstr*This*conj(QConstr))
+        return RFV
+    }
+     
+    function doGlossyShader(MatType:string,FirstDir:vector,FirstHit:vector,R:ranger){
+        local ColOut = vec(1)
+        local WhereExit = rangerOffset(FirstHit+FirstDir,FirstHit+FirstDir*SAMPLEHEIGHT)
+        local ExtraPass = rangerOffset(WhereExit:positionLeftSolid()+FirstDir*4,WhereExit:positionLeftSolid()+FirstDir*SAMPLEHEIGHT)
+        if( ( (MatType=="glass") +(MatType=="metal") ) * REFLMAX ){
+            local Roughn = (MatType=="metal")*0.25
+            local R_REFL = FirstHit
+            local INRANGER = R  
+            local Dir = FirstDir
+             for(I=1,REFLMAX){
+             R_REFL=Dir:doReflect(R:hitNormal())
+             INRANGER = rangerOffset(R:pos(),R:pos()+9999*(R_REFL+(Roughn*vec(random()-0.5,random()-0.5,random()-0.5)):normalized()))
+             }
+            local MPASS = 0.5+0.5*vec(INRANGER:hitNormal():dot(sunDirection()))
+            local GTPASS=(0.5+0.5*vec(ExtraPass:hitNormal():dot(sunDirection())))
+            if(MatType=="metal"){
+            ColOut=MPASS
+            }else{
+            ColOut=max(vec(1),MPASS*0.3+0.9*GTPASS)
+            }
+        }
+        return ColOut
+    }
+    
+    # colormap, will get expanded upon later
+    function cmap(E:entity){
+     local C = vec(0.5)   
+      if(E:getClass()=="player"){C=vec(0,1,0)} 
+      if(E:getClass():sub(1,10)=="gmod_wire_"){C=vec(0.2,0.5,1)}
+      if(E:getClass()=="prop_physics"){C=vec(1,0,0)}
+      if(E:getClass()=="prop_ragdoll"){C=vec(0.7,0.7,1)}
+      if(E:getClass()=="mining_rock"){C=vec(1,0.7,0.7)}
+      if(E:getClass():sub(1,4)=="npc_"){C=vec(0,1,0)}
+     return C   
+    }
+    
+    function matCluster(S:string){
+     local DIRS=S:explode("/")
+     local Last=DIRS:count()
+     local AllWeCareAbout = DIRS[Last,string]:right(2):toNumber(32)
+     local COLM = vec(1)
+     COLM = hsv2rgb((AllWeCareAbout*360/32+45)%360,0.8,1)*vec(1/255)
+     return COLM   
+    }
+    
+    
+    # crude AO. requires multisampling to look good
+    function getAO(P09852:vector,R18518){
+        local AOContainer=0
+        local CAO = vec(0)
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()    
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+            AOContainer+=rangerOffset(P09852,P09852+vec(0,0,R18518):rotate(ang(randint(360),randint(360),randint(360)))):hit()
+        CAO = vec(AOContainer/8)
+        return CAO 
+    }
 }
 
 setName("Raytracing: "+toString(DS[H])+"x"+toString(DS[W])+"\n@"+toString(SAMPLES)+" Samples/px,"+toString(8*SAMPLES)+" AO samples/px\nRT2 by Zylenxx (@zylenxx)")
@@ -72,7 +119,14 @@ event input(InputName:string) {
     if(changed(ADD)&&ADD){ADDCPUBIAS+=100}
     if(changed(REM)&&REM){ADDCPUBIAS-=100}
 }
+
 event tick(){
+    
+    if(changed(floor(curtime()))){
+        PIXELRATE=CURPX-PREVPX
+        PREVPX=CURPX
+    }
+    
     holoColor(1,min(1,max(0,CPUTIME-ADDCPUBIAS-CPULIM)/1000)*vec(255,192,0))
     CPUTIME = cpuUsage()*1000000
     PERFLIMIT=max(2,(PERFLIMIT+((cpuUsage()*1000000)<(CPULIM+ADDCPUBIAS))-((cpuUsage()*1000000)>(CPULIM+ADDCPUBIAS))))
@@ -105,18 +159,26 @@ event tick(){
                 RY
                 )
             local ALBEDO = min(1,2+1*R:hitNormal():dot(sunDirection()))
-            local CL     = cmap(R:entity())
+            
+#[entity based]#
+           # local CL     = cmap(R:entity())
+#[Mat cluster]#
+             local CL     = matCluster(R:hitTexture()) 
+#[Pure normals]#            
+            #local CL     = vec(0.5)+vec(0.5)*R:hitNormal()
+            local GLS    = doGlossyShader(R:matType(),(RY-RX):normalized(),R:pos(),R)
             local AOf    = min(vec(1),2*(vec(1)-getAO(R:pos()+R:hitNormal()*0.001,AOSZ))) #scope branch 5
             local SH     = 1-0.5*rangerOffset(R:pos(),R:pos()-((randvec(vec(-0.01),vec(0.01)))+sunDirection())*9999):hit()
             local END    = R:hit()
             local SkyCol = vec(0.15,0.15,0.26)*(vec(1)-SH)
-#[This is everything]# Sampled      = (Sampled*((SAMPLES-1)/SAMPLES)) + ((1/SAMPLES)*((ALBEDO*AOf)*CL*SH*END+(SkyCol*(1-END))))
-#[This is just AO]# #  Sampled=Sampled*((SAMPLES-1)/SAMPLES)+(1/SAMPLES)*(1-AOf)
+#[This is everything]#   Sampled      = (Sampled*((SAMPLES-1)/SAMPLES)) + ((1/SAMPLES)*(((ALBEDO+GLS)/2*AOf)*CL*SH*END+(SkyCol*(1-END))))
+#[This is no AO]#     #  Sampled      = (Sampled*((SAMPLES-1)/SAMPLES)) + ((1/SAMPLES)*((ALBEDO+GLS)/2*CL*SH*END+(SkyCol*(1-END))))
+#[This is just AO]#   #  Sampled=Sampled*((SAMPLES-1)/SAMPLES)+(1/SAMPLES)*(1-AOf)
         }
        # DS[DS[W]/2+(DS[W]*DS[H])/2]=rgb2digi(255,0,0,DS[COL])
         DS[PTR]=rgb2digi(255*Sampled,DS[COL])
         PTR+=1
+        CURPX+=1
         PTR=PTR%(DS[W]*DS[H])   
     }
-    DBG=maxquota()
 }
