@@ -1,25 +1,34 @@
 @name raytracer 2
-@model models/props_lab/harddrive02.mdl
+@model models/props/cs_office/computer_caseb_p1.mdl
 @inputs  DS:wirelink Ply:entity ADD REM
-@outputs PERFLIMIT X Y PTR DBG:vector READ CPUTIME UIX UIY ADDCPUBIAS
+@outputs PERFLIMIT X Y PTR DBG READ CPUTIME UIX UIY ADDCPUBIAS CPULIM
 @persist ZOOM P:vector A:angle COL W H N CLK PTR X Y READ Ply:entity
-@persist UIX UIY  R:ranger Sampled:vector DBG:vector AOSZ
-@persist PERFLIMIT SAMPLES SAMPLEHEIGHT ADDCPUBIAS
+@persist UIX UIY  R:ranger Sampled:vector DBG AOSZ
+@persist PERFLIMIT SAMPLES SAMPLEHEIGHT ADDCPUBIAS CPULIM
 if(first()){
+holoCreate(1)
+holoPos(1,entity():pos()+vec(12.5,1.95,13.40):rotate(entity():angles()))
+holoModel(1,"models/hunter/misc/sphere025x025.mdl")
+holoScale(1,vec(0.05))
+holoMaterial(1,"models/debug/debugwhite")
+holoAlpha(1,64)
+holoDisableShading(1,1)
+holoParent(1,entity())
 W     = 1048572
 H     = 1048573
 N     = 1048574
 CLK   = 1048575
 COL   = 1048569
-ZOOM  = 800
-SAMPLES = 8
-SAMPLEHEIGHT = 800
+ZOOM  = 2000
+SAMPLES = 16
+SAMPLEHEIGHT = 2400
 PERFLIMIT = 1
-AOSZ  = 100
+AOSZ  = 350
+CPULIM=3000
 rangerPersist(1)
 rangerFilter(Ply)
-DS[W]=256*3/4
-DS[H]=256*4/4
+DS[W]=96*3/4
+DS[H]=96*4/4
 DS[N]=0
 DS[COL]=3
 DS[CLK]=1
@@ -29,6 +38,7 @@ function cmap(E:entity){
   if(E:getClass()=="player"){C=vec(0,1,0)} 
   if(E:getClass():sub(1,5)=="wire_"){C=vec(0.2,0.5,1)}
   if(E:getClass()=="prop_physics"){C=vec(1,0,0)}
+  if(E:getClass()=="prop_ragdoll"){C=vec(0.7,0.7,1)}
  return C   
 }
 
@@ -50,14 +60,15 @@ function getAO(P09852:vector,R18518){
 setName("Raytracing: "+toString(DS[H])+"x"+toString(DS[W])+"\n@"+toString(SAMPLES)+" Samples,"+toString(8)+" AO samples")
 #scope branch 1
 event input(InputName:string) {
-if(changed(ADD)){ADDCPUBIAS+=100}
-if(changed(REM)){ADDCPUBIAS-=100}
+if(changed(ADD)&&ADD){ADDCPUBIAS+=100}
+if(changed(REM)&&REM){ADDCPUBIAS-=100}
 }
 event tick(){
+    holoColor(1,min(1,max(0,CPUTIME-ADDCPUBIAS-CPULIM)/1000)*vec(255,192,0))
     CPUTIME = cpuUsage()*1000000
-    PERFLIMIT=PERFLIMIT+((cpuUsage()*1000000)<(5000+ADDCPUBIAS))-((cpuUsage()*1000000)>(6100+ADDCPUBIAS))
+    PERFLIMIT=max(2,(PERFLIMIT+((cpuUsage()*1000000)<(CPULIM+ADDCPUBIAS))-((cpuUsage()*1000000)>(CPULIM+ADDCPUBIAS))))
     for(_=1,PERFLIMIT/SAMPLES){ # scope branch 2
-        
+        if(maxquota()<500){continue}
         if(PTR==1){
             P=Ply:pos()
             A=Ply:angles()
@@ -74,8 +85,8 @@ event tick(){
             RNDX = N>1*ZOOM/DS[W]*((randint(64)-32)/64)
             RNDY = N>1*ZOOM/DS[H]*((randint(64)-32)/64)
             }                
-            local RX=P+1/16*vec(0,-UIX*ZOOM+RNDX,-UIY*ZOOM+RNDY):rotate(A*ang(1,1,1))
-            local RY=P+vec(SAMPLEHEIGHT,-UIX*ZOOM+RNDX,-UIY*ZOOM+RNDY):rotate(A*ang(1,1,1))
+            local RX=P+1/16*vec(0,-UIX*ZOOM+RNDX,-UIY*ZOOM+RNDY):rotate(A)
+            local RY=P+vec(SAMPLEHEIGHT,-UIX*ZOOM+RNDX,-UIY*ZOOM+RNDY):rotate(A)
             R=rangerOffset(
                 RX,
                 RY
@@ -92,4 +103,5 @@ event tick(){
         PTR+=1
         PTR=PTR%(DS[W]*DS[H])   
     }
+    DBG=maxquota()
 }
