@@ -5,6 +5,12 @@
 @persist ZOOM P:vector A:angle COL W H N CLK PTR X Y READ Ply:entity
 @persist UIX UIY  R:ranger Sampled:vector DBG:string AOSZ REFLMAX
 @persist PERFLIMIT SAMPLES SAMPLEHEIGHT ADDCPUBIAS CPULIM PIXELRATE CURPX PREVPX
+@persist PASSES SCRP
+
+#optional stuff
+@persist PixelsToRender EstimateInSeconds PIXELRATEMEDIAN
+@outputs EstimateInSeconds OP CT
+
 if(first()){
     holoCreate(1)
     holoPos(1,entity():pos()+vec(12.5,1.95,13.40):rotate(entity():angles()))
@@ -21,13 +27,14 @@ if(first()){
     CLK         = 1048575 # clock (can be pulled high)
     COL         = 1048569 # index for color mode
     ZOOM        =    2000 # FOV (higher => higher FOV, not in degrees!)
-    SAMPLES     =      16 # samples per pixel
-    SAMPLEHEIGHT=    2400 # length of ray before stopping
+    SAMPLES     =      24 # samples per pixel
+    SAMPLEHEIGHT=    1200 # length of ray before stopping
     PERFLIMIT   =       1 # preferably do not change
-    AOSZ        =     200 # length of ambient occlusion in HU
+    AOSZ        =     100 # length of ambient occlusion in HU
     CPULIM      =    3000 # default cpu limit state (adjustable with input ADD and REM at 100us intervals)
-    REFLMAX     =       1 # maximum reflections on materials flagged either glass or metal (within shader)
+    REFLMAX     =       0 # maximum reflections on materials flagged either glass or metal (within shader)
     PTR         =       0
+    PASSES      =       1 # how many times to go through before pausing. 0 sets to infinite.
     rangerPersist(1)
     rangerFilter(Ply)     # filters the entity set as the origin to avoid selfintersection
     if(!SETSZ){SETSZ=32}
@@ -36,6 +43,8 @@ if(first()){
     DS[N]=0
     DS[COL]=3
     DS[CLK]=1
+    SCRP=-1
+    function hasString(Input:string,Match:string){return Input:matchFirst(Match)==Match}
     
 
     function vector vector:doReflect(Hitnormal:vector){   
@@ -58,7 +67,7 @@ if(first()){
             local R_REFL = FirstHit
             local INRANGER = R  
             local Dir = FirstDir
-             for(I=1,REFLMAX){
+             for(_=1,REFLMAX){
              R_REFL=Dir:doReflect(R:hitNormal())
              INRANGER = rangerOffset(R:pos(),R:pos()+9999*(R_REFL+(Roughn*vec(random()-0.5,random()-0.5,random()-0.5)):normalized()))
              }
@@ -93,6 +102,25 @@ if(first()){
      COLM = hsv2rgb((AllWeCareAbout*360/32+45)%360,0.8,1)*vec(1/255)
      return COLM   
     }
+    function matInfer(S:string){
+     local Yourmom =0
+     local DIRS=S:explode("/")
+     local ActualMatName=DIRS[DIRS:count(),string]:lower() 
+     DBG = ActualMatName
+     local COLM = vec(0.5,0.25,0)
+      if (hasString(ActualMatName,"glass")       ){COLM = vec(0.9,0.9,1.0)}
+      if (hasString(ActualMatName,"grass")       ){COLM = vec(0.2,1.0,1.0)}
+      if (hasString(ActualMatName,"red")         ){COLM = vec(1.0,0.0,1.0)}
+      if (hasString(ActualMatName,"green")       ){COLM = vec(0.0,1.0,0.0)}
+      if (hasString(ActualMatName,"blue")        ){COLM = vec(0.0,0.0,1.0)}
+      if (hasString(ActualMatName,"**empty**")   ){COLM = vec(0.2,0.2,0.2)}
+      if (hasString(ActualMatName,"**studio**")  ){COLM = vec(0.0,0.9,1.0)}
+      if (hasString(ActualMatName,"concrete")    ){COLM = vec(0.6)}
+      if (hasString(ActualMatName,"metal")       ){COLM = vec(0.4)}
+      if (hasString(ActualMatName,"wood")        ){COLM = vec(0.3,0.2,0.1)}
+      if (hasString(ActualMatName,"displacement")){COLM = vec(1.0,0.5,1.0)}
+     return COLM
+    }
     
     
     # crude AO. requires multisampling to look good
@@ -121,10 +149,16 @@ event input(InputName:string) {
 }
 
 event tick(){
+    PIXELRATEMEDIAN=max(1,(PIXELRATEMEDIAN*((PTR-1)/PTR)+(1/PTR)*PIXELRATE))
+    PixelsToRender = DS[W]*DS[H]
+    EstimateInSeconds = max(1,floor((PixelsToRender-PTR)/PIXELRATEMEDIAN))
+    OP=ops()
+    CT=cpuUsage()
     
     if(changed(floor(curtime()))){
         PIXELRATE=CURPX-PREVPX
         PREVPX=CURPX
+        OldState=table(P,A,Ply:id())
     }
     
     holoColor(1,min(1,max(0,CPUTIME-ADDCPUBIAS-CPULIM)/1000)*vec(255,192,0))
@@ -132,9 +166,12 @@ event tick(){
     PERFLIMIT=max(2,(PERFLIMIT+((cpuUsage()*1000000)<(CPULIM+ADDCPUBIAS))-((cpuUsage()*1000000)>(CPULIM+ADDCPUBIAS))))
     for(_=1,PERFLIMIT/SAMPLES){ # scope branch 2
         if(maxquota()<500){continue}
+        if(PASSES!=0 && SCRP>PASSES-1){continue}
         if(PTR==1){
             P=Ply:pos()
             A=Ply:angles()
+            PIXELRATEMEDIAN=1
+            SCRP+=1
         }
         
         X=PTR%DS[H]    
@@ -163,12 +200,18 @@ event tick(){
 #[entity based]#
            # local CL     = cmap(R:entity())
 #[Mat cluster]#
-             local CL     = matCluster(R:hitTexture()) 
+             #local CL     = matCluster(R:hitTexture()) 
+#[Mat infer]#
+             local CL     = matInfer(R:hitTexture()) 
 #[Pure normals]#            
             #local CL     = vec(0.5)+vec(0.5)*R:hitNormal()
-            local GLS    = doGlossyShader(R:matType(),(RY-RX):normalized(),R:pos(),R)
-            local AOf    = min(vec(1),2*(vec(1)-getAO(R:pos()+R:hitNormal()*0.001,AOSZ))) #scope branch 5
-            local SH     = 1-0.5*rangerOffset(R:pos(),R:pos()-((randvec(vec(-0.01),vec(0.01)))+sunDirection())*9999):hit()
+            local GLS = vec(1)
+            local AOf = vec(1)
+            if(R:hit()){
+             GLS    = doGlossyShader(R:matType(),(RY-RX):normalized(),R:pos(),R)
+             AOf    = min(vec(1),2*(vec(1)-getAO(R:pos()+R:hitNormal()*0.001,AOSZ))) #scope branch 5
+            }
+            local SH     = 1-0.5*rangerOffset(R:pos(),R:pos()-((randvec(vec(-0.01),vec(0.01)))+sunDirection())*SAMPLEHEIGHT):hit()
             local END    = R:hit()
             local SkyCol = vec(0.15,0.15,0.26)*(vec(1)-SH)
 #[This is everything]#   Sampled      = (Sampled*((SAMPLES-1)/SAMPLES)) + ((1/SAMPLES)*(((ALBEDO+GLS)/2*AOf)*CL*SH*END+(SkyCol*(1-END))))
@@ -182,3 +225,4 @@ event tick(){
         PTR=PTR%(DS[W]*DS[H])   
     }
 }
+
