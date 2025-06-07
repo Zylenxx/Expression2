@@ -4,6 +4,7 @@
 @persist ModelCheck:number
 @persist BALL:vector2  
 @persist BOOTICON:array BOOTTEXT:table Vertecies:array Faces:table BG:array
+@persist TableFaces:table TableVerts:array TableUV:array TableReady:number
 @persist [GetPoly Index TimeSinceStarted Startup TableTime]:number
 
 @persist [SCORE EXTRABALLS BALLSET CURBALL]:number
@@ -15,11 +16,11 @@ if(first()){
     Startup=1
     SCORE=0
     TableTime=0
-    #ModelCheck=0
+    TableReady=0
     ModelCheck=(TABL1:entity():model()=="models/hunter/plates/plate2x4.mdl")
     # if you dont have the large table be this one it will look stretched.
     
-    # main table music is "music/hl2_song1.mp3"
+    # main table music is "music/hl1_song10.mp3"
     #print(egpMaxObjects())
     #300
     
@@ -34,6 +35,84 @@ if(first()){
      
     BG = array(vec2(1.305897,-0.292666),vec2(-1.428478,-0.360182),vec2(0.726390,0.793207))
     TimeSinceStarted=0.00
+	
+	TableVerts=array(
+   vec2( 69 , 433),vec2( 65 , 449),vec2( 62 , 458),vec2( 57 , 465),vec2( 51 , 471),vec2( 45 , 474),vec2( 37 , 475),vec2( 28 , 469),vec2( 20 , 459),vec2( 14 , 440),vec2( 11 , 420),
+			vec2( 12 , 398),vec2( 18 , 380),vec2( 26 , 366),vec2( 35 , 360),vec2( 25 , 314),vec2( 21 , 255),vec2( 25 , 196),vec2( 35 , 146),vec2( 55 , 97),vec2( 77 , 64),vec2( 103 , 42),
+			vec2( 134 , 35),vec2( 502 , 34),vec2( 511 , 0),vec2( 0 , 0),vec2( 0 , 511),vec2( 512 , 511),vec2( 501 , 473),vec2( 367 , 473),vec2( 350 , 442),vec2( 336 , 388),vec2( 329 , 371),
+			vec2( 282 , 374),vec2( 241 , 416),vec2( 202 , 444),vec2( 164 , 465),vec2( 135 , 473),vec2( 105 , 466),vec2( 85 , 450),vec2( 0 , 398),vec2( 0 , 196),vec2( 439 , 66),
+			vec2( 440 , 444),vec2( 474 , 183),vec2( 474 , 322),vec2( 477 , 209),vec2( 479 , 238),vec2( 479 , 267),vec2( 477 , 295),vec2( 502 , 66),vec2( 501 , 444),vec2( 60 , 376),
+			vec2( 105 , 377),vec2( 78 , 303),vec2( 62 , 303),vec2( 48 , 342),vec2( 62 , 205),vec2( 77 , 205),vec2( 80 , 198),vec2( 65 , 121),vec2( 47 , 167),vec2( 58 , 155),vec2( 68 , 127),
+			vec2( 88 , 99),vec2( 110 , 82),vec2( 135 , 76),vec2( 180 , 95),vec2( 135 , 65),vec2( 111 , 71),vec2( 86 , 90),vec2( 250 , 144),vec2( 298 , 144),vec2( 312 , 116),vec2( 312 , 76),
+			vec2( 321 , 76),vec2( 319 , 66),vec2( 236 , 381),vec2( 205 , 313),vec2( 177 , 407),vec2( 160 , 417),vec2( 129 , 422),vec2( 130 , 436),vec2( 160 , 432),vec2( 179 , 422),
+			vec2( 128 , 424),vec2( 128 , 436),vec2( 127 , 426),vec2( 126 , 429),vec2( 127 , 431),vec2( 127 , 434),vec2( 199 , 181),vec2( 155 , 142),vec2( 141 , 135),vec2( 119 , 138),
+			vec2( 101 , 153),vec2( 90 , 169),vec2( 80 , 149),vec2( 97 , 123),vec2( 119 , 108),vec2( 140 , 107),vec2( 159 , 115),vec2( 205 , 161),vec2( 286 , 121),vec2( 300 , 93),
+			vec2( 363 , 374),vec2( 363 , 139),vec2( 362 , 359),vec2( 361 , 154),vec2( 403 , 374),vec2( 407 , 369),vec2( 405 , 372),vec2( 402 , 139),vec2( 407 , 144),vec2( 405 , 141),
+			vec2( 417 , 338),vec2( 417 , 329),vec2( 418 , 333),vec2( 417 , 175),vec2( 416 , 184),vec2( 417 , 180),vec2( 417 , 329),vec2( 412 , 327),vec2( 414 , 328),vec2( 416 , 184),
+			vec2( 411 , 186),vec2( 414 , 185),vec2( 360 , 362),vec2( 361 , 372),vec2( 359 , 368),vec2( 359 , 151),vec2( 361 , 141),vec2( 359 , 143),vec2( 46 , 511),vec2( 139 , 511),
+			vec2( 341 , 511),vec2( 139 , 0),vec2( 0 , 417),vec2( 501 , 322),vec2( 501 , 183)
+	)
+	
+	TableUV=array(
+    		vec2(0.136719,0.316406),vec2(0.187500,0.527344),vec2(0.269531,0.449219),vec2(0.285156,0.949219),vec2(0.257812,0.964844),vec2(0.386719,0.949219),vec2(0.277344,0.203125),
+			vec2(0.359375,0.195312),vec2(0.296875,0.292969),vec2(0.718750,0.296875),vec2(0.656250,0.183594),vec2(0.718750,0.203125),vec2(0.121094,0.832031),vec2(0.105469,0.878906),
+			vec2(0.121094,0.871094),vec2(0.222656,1.000000),vec2(0.734375,0.722656),vec2(0.773438,0.687500),vec2(0.722656,0.695312),vec2(0.332031,0.906250),vec2(0.261719,0.792969),
+			vec2(0.265625,0.882812),vec2(0.074219,0.734375),vec2(0.000000,0.726562),vec2(0.089844,0.792969),vec2(0.761719,0.871094),vec2(0.804688,0.828125),vec2(0.750000,0.867188),
+			vec2(0.371094,0.019531),vec2(0.640625,0.019531),vec2(1.000000,0.000000),vec2(0.152344,0.863281),vec2(0.812500,0.648438),vec2(0.851562,0.390625),vec2(0.816406,0.414062),
+			vec2(0.535156,0.062500),vec2(0.476562,0.062500),vec2(0.347656,0.183594),vec2(0.359375,0.191406),vec2(0.683594,0.597656),vec2(0.644531,0.609375),vec2(0.640625,0.187500),
+			vec2(0.699219,0.292969),vec2(0.636719,0.195312),vec2(0.613281,0.843750),vec2(0.597656,0.847656),vec2(0.597656,0.878906),vec2(0.175781,0.746094),vec2(0.167969,0.750000),
+			vec2(0.171875,0.750000),vec2(0.671875,0.906250),vec2(0.695312,0.886719),vec2(0.761719,0.441406),vec2(0.718750,0.417969),vec2(0.718750,0.511719),vec2(0.253906,0.539062),
+			vec2(0.203125,0.652344),vec2(0.386719,0.597656),vec2(0.757812,0.808594),vec2(0.699219,0.800781),vec2(0.707031,0.843750),vec2(0.175781,0.648438),vec2(0.183594,0.687500),
+			vec2(0.871094,0.019531),vec2(0.000000,0.332031),vec2(0.132812,0.605469),vec2(0.089844,0.886719),vec2(0.242188,0.343750),vec2(0.273438,0.355469),vec2(0.183594,1.000000),
+			vec2(0.222656,0.976562),vec2(0.179688,0.976562),vec2(0.089844,0.679688),vec2(0.074219,0.910156),vec2(0.078125,0.898438),vec2(0.000000,0.910156),vec2(0.589844,0.066406),
+			vec2(0.871094,0.734375),vec2(0.851562,0.734375),vec2(0.101562,0.960938),vec2(0.082031,0.945312),vec2(0.000000,1.000000),vec2(0.156250,0.687500),vec2(0.070312,0.925781),
+			vec2(0.281250,0.296875),vec2(0.273438,0.292969),vec2(0.140625,0.972656),vec2(0.371094,0.074219),vec2(0.132812,0.019531),vec2(0.132812,0.140625),vec2(0.074219,0.281250),
+			vec2(1.000000,0.726562),vec2(0.933594,0.019531),vec2(0.929688,0.738281),vec2(0.500000,0.957031),vec2(0.640625,0.074219),vec2(0.871094,0.140625),vec2(0.714844,0.929688),
+			vec2(0.617188,1.000000),vec2(1.000000,1.000000),vec2(0.808594,0.890625),vec2(0.296875,0.929688),vec2(0.875000,0.847656),vec2(0.148438,0.746094),vec2(0.160156,0.753906),
+			vec2(0.000000,0.000000),vec2(0.074219,0.019531),vec2(0.421875,0.066406),vec2(0.152344,0.750000),vec2(0.148438,0.750000),vec2(0.355469,0.183594),vec2(0.726562,0.214844),
+			vec2(0.726562,0.289062),vec2(0.824219,0.832031),vec2(0.839844,0.785156),vec2(0.859375,0.781250),vec2(0.917969,0.796875),vec2(0.871094,0.375000),vec2(0.851562,0.371094),
+			vec2(0.773438,0.390625),vec2(0.667969,0.824219),vec2(0.730469,0.765625),vec2(0.789062,0.765625),vec2(0.406250,0.878906),vec2(0.406250,0.847656),vec2(0.273438,0.207031),
+			vec2(0.269531,0.210938),vec2(0.648438,0.183594),vec2(0.269531,0.289062),vec2(0.722656,0.207031),vec2(0.722656,0.292969),vec2(0.703125,0.296875),vec2(0.636719,0.191406),
+			vec2(0.789062,0.726562),vec2(0.339844,0.183594),vec2(0.292969,0.296875),vec2(0.617188,0.949219),vec2(0.156250,0.750000)
+	)
+	
+	TableFaces=table(
+    		array(vec2(31,1),vec2(35,2),vec2(34,3)),array(vec2(14,4),vec2(13,5),vec2(16,6)),array(vec2(111,7),vec2(123,8),vec2(108,9)),array(vec2(133,10),vec2(119,11),vec2(114,12)),
+            array(vec2(40,13),vec2(3,14),vec2(2,15)),array(vec2(13,5),vec2(41,16),vec2(16,6)),array(vec2(94,17),vec2(102,18),vec2(93,19)),array(vec2(57,20),vec2(54,21),vec2(53,22)),
+            array(vec2(38,23),vec2(135,24),vec2(39,25)),array(vec2(61,26),vec2(65,27),vec2(64,28)),array(vec2(139,29),vec2(140,30),vec2(25,31)),array(vec2(2,15),vec2(1,32),vec2(40,13)),
+            array(vec2(68,33),vec2(75,34),vec2(105,35)),array(vec2(48,36),vec2(140,30),vec2(49,37)),array(vec2(123,8),vec2(118,38),vec2(124,39)),array(vec2(93,19),vec2(103,40),vec2(92,41)),
+            array(vec2(133,10),vec2(125,42),vec2(120,42)),array(vec2(125,42),vec2(109,43),vec2(126,44)),array(vec2(60,45),vec2(59,46),vec2(58,47)),array(vec2(82,48),vec2(88,49),vec2(86,50)),
+            array(vec2(60,45),vec2(62,51),vec2(63,52)),array(vec2(104,53),vec2(73,54),vec2(72,55)),array(vec2(78,56),vec2(80,57),vec2(79,58)),array(vec2(99,59),vec2(96,60),vec2(98,61)),
+            array(vec2(85,62),vec2(81,63),vec2(80,57)),array(vec2(51,64),vec2(25,31),vec2(140,30)),array(vec2(139,29),vec2(49,37),vec2(140,30)),array(vec2(136,65),vec2(36,66),vec2(35,2)),
+            array(vec2(4,67),vec2(3,14),vec2(39,25)),array(vec2(32,68),vec2(34,3),vec2(33,69)),array(vec2(138,70),vec2(12,71),vec2(11,72)),array(vec2(135,24),vec2(38,23),vec2(37,73)),
+            array(vec2(135,24),vec2(37,73),vec2(36,66)),array(vec2(6,74),vec2(5,75),vec2(134,76)),array(vec2(47,77),vec2(140,30),vec2(48,36)),array(vec2(69,78),vec2(68,33),vec2(67,79)),
+            array(vec2(9,80),vec2(8,81),vec2(27,82)),array(vec2(84,83),vec2(82,48),vec2(81,63)),array(vec2(134,76),vec2(7,84),vec2(6,74)),array(vec2(108,9),vec2(130,85),vec2(129,86)),
+            array(vec2(9,80),vec2(27,82),vec2(10,87)),array(vec2(134,76),vec2(39,25),vec2(135,24)),array(vec2(46,88),vec2(52,89),vec2(44,90)),array(vec2(30,91),vec2(136,65),vec2(31,1)),
+            array(vec2(137,92),vec2(24,93),vec2(23,94)),array(vec2(16,6),vec2(41,16),vec2(17,95)),array(vec2(51,64),vec2(45,96),vec2(43,97)),array(vec2(19,98),vec2(42,99),vec2(26,100)),
+            array(vec2(42,99),vec2(17,95),vec2(41,16)),array(vec2(26,100),vec2(20,101),vec2(19,98)),array(vec2(16,6),vec2(15,102),vec2(14,4)),array(vec2(26,100),vec2(21,103),vec2(20,101)),
+            array(vec2(134,76),vec2(5,75),vec2(4,67)),array(vec2(83,104),vec2(89,105),vec2(82,48)),array(vec2(28,106),vec2(29,107),vec2(52,89)),array(vec2(28,106),vec2(139,29),vec2(25,31)),
+            array(vec2(139,29),vec2(46,88),vec2(50,108)),array(vec2(63,52),vec2(61,26),vec2(64,28)),array(vec2(91,109),vec2(83,104),vec2(87,110)),array(vec2(124,39),vec2(117,111),vec2(122,111)),
+            array(vec2(133,10),vec2(113,112),vec2(107,113)),array(vec2(30,91),vec2(28,106),vec2(136,65)),array(vec2(71,114),vec2(66,115),vec2(65,27)),array(vec2(70,116),vec2(67,79),vec2(66,115)),
+            array(vec2(137,92),vec2(22,117),vec2(26,100)),array(vec2(77,118),vec2(76,119),vec2(75,34)),array(vec2(75,34),vec2(74,120),vec2(105,35)),array(vec2(97,121),vec2(98,61),vec2(96,60)),
+            array(vec2(95,122),vec2(99,59),vec2(100,123)),array(vec2(21,103),vec2(26,100),vec2(22,117)),array(vec2(45,96),vec2(140,30),vec2(47,77)),array(vec2(56,124),vec2(55,125),vec2(57,20)),
+            array(vec2(27,82),vec2(7,84),vec2(134,76)),array(vec2(112,126),vec2(111,7),vec2(110,127)),array(vec2(120,42),vec2(121,128),vec2(119,11)),array(vec2(138,70),vec2(10,87),vec2(27,82)),
+            array(vec2(106,129),vec2(108,9),vec2(129,86)),array(vec2(115,130),vec2(113,112),vec2(114,12)),array(vec2(104,53),vec2(68,33),vec2(105,35)),array(vec2(132,131),vec2(133,10),vec2(107,113)),
+            array(vec2(131,132),vec2(109,43),vec2(133,10)),array(vec2(127,133),vec2(125,42),vec2(126,44)),array(vec2(94,17),vec2(100,123),vec2(101,134)),array(vec2(108,9),vec2(110,127),vec2(111,7)),
+            array(vec2(31,1),vec2(136,65),vec2(35,2)),array(vec2(111,7),vec2(116,135),vec2(123,8)),array(vec2(133,10),vec2(120,42),vec2(119,11)),array(vec2(40,13),vec2(39,25),vec2(3,14)),
+            array(vec2(13,5),vec2(12,71),vec2(41,16)),array(vec2(94,17),vec2(101,134),vec2(102,18)),array(vec2(57,20),vec2(55,125),vec2(54,21)),array(vec2(61,26),vec2(71,114),vec2(65,27)),
+            array(vec2(68,33),vec2(77,118),vec2(75,34)),array(vec2(123,8),vec2(116,135),vec2(118,38)),array(vec2(93,19),vec2(102,18),vec2(103,40)),array(vec2(125,42),vec2(133,10),vec2(109,43)),
+            array(vec2(82,48),vec2(89,105),vec2(88,49)),array(vec2(60,45),vec2(58,47),vec2(62,51)),array(vec2(78,56),vec2(85,62),vec2(80,57)),array(vec2(99,59),vec2(95,122),vec2(96,60)),
+            array(vec2(85,62),vec2(84,83),vec2(81,63)),array(vec2(51,64),vec2(24,93),vec2(25,31)),array(vec2(139,29),vec2(50,108),vec2(49,37)),array(vec2(136,65),vec2(135,24),vec2(36,66)),
+            array(vec2(32,68),vec2(31,1),vec2(34,3)),array(vec2(138,70),vec2(41,16),vec2(12,71)),array(vec2(69,78),vec2(77,118),vec2(68,33)),array(vec2(84,83),vec2(83,104),vec2(82,48)),
+            array(vec2(108,9),vec2(128,136),vec2(130,85)),array(vec2(134,76),vec2(4,67),vec2(39,25)),array(vec2(46,88),vec2(139,29),vec2(52,89)),array(vec2(137,92),vec2(25,31),vec2(24,93)),
+            array(vec2(51,64),vec2(140,30),vec2(45,96)),array(vec2(19,98),vec2(18,137),vec2(42,99)),array(vec2(42,99),vec2(18,137),vec2(17,95)),array(vec2(83,104),vec2(90,138),vec2(89,105)),
+            array(vec2(28,106),vec2(52,89),vec2(139,29)),array(vec2(63,52),vec2(62,51),vec2(61,26)),array(vec2(91,109),vec2(90,138),vec2(83,104)),array(vec2(124,39),vec2(118,38),vec2(117,111)),
+            array(vec2(133,10),vec2(114,12),vec2(113,112)),array(vec2(30,91),vec2(29,107),vec2(28,106)),array(vec2(71,114),vec2(70,116),vec2(66,115)),array(vec2(70,116),vec2(69,78),vec2(67,79)),
+            array(vec2(137,92),vec2(23,94),vec2(22,117)),array(vec2(27,82),vec2(8,81),vec2(7,84)),array(vec2(138,70),vec2(11,72),vec2(10,87)),array(vec2(104,53),vec2(72,55),vec2(68,33)),
+            array(vec2(94,17),vec2(95,122),vec2(100,123)),array(vec2(108,9),vec2(106,129),vec2(110,127))
+	)
+		
+	
     Vertecies=array(
         vec2(1.201654,-0.170655),vec2(1.117260,-0.587108),vec2(1.024845,-0.568381),vec2(1.109239,-0.151928),vec2(1.082333,-0.146475),vec2(0.997939,-0.562928),
         vec2(0.905524,-0.544200),vec2(0.989918,-0.127747),vec2(0.808886,-0.234879),vec2(0.836927,-0.272723),vec2(0.848661,-0.214817),vec2(0.852211,-0.185607),
@@ -133,6 +212,25 @@ if(first()){
         return Poly
     }
 
+    function wirelink:isPoly(Index){
+      return This:egpObjectType(Index)=="PolyOutline"  
+        
+    }
+
+
+    function wirelink:getNearestPoly(Pos:vector2){
+        local C = TABL1:egpNumObjects()
+        local Dst = array()
+        for(I=1,C){
+            local ID_OBJ_DIST=99999
+                    ID_OBJ_DIST=This:egpPos(I):distance(Pos)
+            Dst[I,number]=ID_OBJ_DIST
+        }
+        return Dst:minIndex()
+    }
+
+
+
     function modelWarning(){
       SCORETABL:egpText(1,"Tablescreen not connected or incompatible model.",vec2(256,256)):setAlign(1,2)
       SCORETABL:entity():soundPlay(1,8,"music/hl2_song26_trainstation1.mp3",4)
@@ -181,13 +279,63 @@ if(first()){
        SCORETABL:egpFont(12,"Alphanumeric LCD",50)
        SCORETABL:egpText(13,(CURBALL+""):sub(1,1),vec2(90,120)):setAlign(1,1)
        SCORETABL:egpFont(13,"Alphanumeric LCD",50)
-    
+       SCORETABL:egpColor(12,hsv2rgb(240,0.3,1))
+       SCORETABL:egpColor(13,hsv2rgb(240,0.3,1))
+       SCORETABL:egpTextLayout(14,"Loading Table...\nPlease Wait",vec2(256,220),vec2(380,90)):setAlign(0,0)
+       SCORETABL:egpFont(14,"Alphanumeric LCD",35)
+       SCORETABL:egpColor(14,hsv2rgb(240,0.3,1))
+       SCORETABL:egpTextLayout(15,"EGP Pinball WIP\nVer 2.5b\n \n ",vec2(256,400),vec2(380,190)):setAlign(0,0)
+       SCORETABL:egpFont(15,"Alphanumeric LCD",35)
+       SCORETABL:egpColor(15,hsv2rgb(240,0.3,1))
     }
+
+    
+    function setEvent(Str:string,Duration:number){
+        SCORETABL:egpSetText(14,Str)
+        if(Duration>0){
+            timer(Duration,1,function(){
+                SCORETABL:egpSetText(14,"")
+            })
+        }
+    }
+    
+    function setMission(Str:string){
+        SCORETABL:egpSetText(15,Str)    
+    }
+
+
+
+
     
     function setupPlayField(){
-        # god help me when making this
-        
+        local PreBox = array(vec4(0,0,0.25,0),vec4(0,512,0.75,0),vec4(512,512,0.75,1),vec4(512,0,0.25,1))
+        TABL1:egpPoly(255,PreBox)
+        TABL1:egpMaterial(255,"skybox/sky_day03_06_hdrdn")
+        local FACE=1
+        timer(0.03,TableFaces:count(),function(){
+            local GetFace = TableFaces[FACE,array]
+            local VTX = array()
+            foreach(N:number,P2dUV:vector2=GetFace){
+              local VT=P2dUV:x()
+              local UV=P2dUV:y()
+              VTX[N,vector4]=vec4(TableVerts[VT,vector2],TableUV[UV,vector2]*vec2(-0.5,-1)+vec2(0.75,1))
+            }
+            TABL1:egpPoly(FACE,VTX)
+            TABL1:egpColor(FACE,vec(255))
+            #TABL1:egpMaterial(FACE,"models/wireframe")            
+            TABL1:egpMaterial(FACE,"skybox/sky_day03_06b_hdrup")            
+            FACE=FACE+1
+            if(FACE==TableFaces:count()){
+             TableReady=1
+             setEvent("Loaded.",3)
+             setMission("Player 1 Turn")
+             print("Table loaded. Elements:"+TABL1:egpNumObjects())
+            TABL1:entity():soundPlay(1,9500,"music/hl1_song10.mp3")
+            }
+        }
+        )
     }
+
     
     function updateScoreText(){
         SCORETABL:egpSetText(13,(CURBALL+""):sub(1,1))
@@ -301,7 +449,7 @@ event tick(){
     }
  }
  
- if(Startup==0&&ModelCheck==1){
+ if(Startup==0&&ModelCheck==1&&egpCanSendUmsg()){
     TableTime=TableTime+tickRealInterval()    
     updateScoreText()
  }
