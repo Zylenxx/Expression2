@@ -458,7 +458,7 @@ event tick(){
 		local Nearest = TABL1:getNearestPoly(TABL1:egpCursor(owner()))
 		local NVTX = Nearest:getVertecies() # should be 3 Vertecies
 		local TRI  = TABL1:egpTriangle(298,NVTX[1,vector2],NVTX[2,vector2],NVTX[3,vector2])
-		local IsHit= TABL1:egpContainsPoint(298,TABL1:egpCursor(owner()))
+		local IsHit= TABL1:egpObjectContainsPoint(298,TABL1:egpCursor(owner()))
 		TABL1:egpColor(298,hsv2rgb(lerp(80,0,IsHit),1,1)) # should be green if within point, red otherwise. This might be a Z fighting issue where overlapping elements do not return properly?
 	
 	]]#
