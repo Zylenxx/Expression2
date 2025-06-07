@@ -443,7 +443,8 @@ event tick(){
     Startup=0
     if(ModelCheck==1){
         setupScoreTable()
-        setupPlayField() 
+        setupPlayField()
+		 
     }else{
         modelWarning()   
     }
@@ -452,10 +453,18 @@ event tick(){
  if(Startup==0&&ModelCheck==1&&egpCanSendUmsg()){
     TableTime=TableTime+tickRealInterval()    
     updateScoreText()
+	# <https://github.com/wiremod/wire/discussions/3354> - This area is where i will check for collisions usually, but it partly does not work, either for PolyOutline's OR Polygons/Triangles
+	#[[
+		local Nearest = TABL1:getNearestPoly(TABL1:egpCursor(owner()))
+		local NVTX = Nearest:getVertecies() # should be 3 Vertecies
+		local TRI  = TABL1:egpTriangle(298,NVTX[1,vector2],NVTX[2,vector2],NVTX[3,vector2])
+		local IsHit= TABL1:egpContainsPoint(298,TABL1:egpCursor(owner()))
+		TABL1:egpColor(298,hsv2rgb(lerp(80,0,IsHit),1,1)) # should be green if within point, red otherwise. This might be a Z fighting issue where overlapping elements do not return properly?
+	
+	]]#
  }
  if(Startup==0&&ModelCheck==0){
        SCORETABL:egpColor(3,vec(130,95,34)*lerp(1,0,easeInCirc(max(0,-3+TimeSinceStarted)/3))) 
        SCORETABL:egpOrder(3,0)  
  }
 }
-
